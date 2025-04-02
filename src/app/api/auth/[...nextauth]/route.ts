@@ -1,4 +1,4 @@
-import AuthHandler from "@/app/api/login/nextAuthHandler"
+import AuthHandler from "@/app/api/nxtHandle/nextAuthHandler"
 import NextAuth from "next-auth"
 
 const handler = NextAuth(AuthHandler)

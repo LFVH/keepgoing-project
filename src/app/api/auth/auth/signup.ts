@@ -3,7 +3,7 @@
 import {
   FormState,
   SignupFormSchema,
-} from '@/app/auth/definitions';
+} from '@/app/api/auth/auth/definitions';
 import bcrypt from 'bcryptjs';
 import Prisma from '@/database/prisma';
 

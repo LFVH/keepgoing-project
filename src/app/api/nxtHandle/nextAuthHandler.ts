@@ -58,6 +58,7 @@ const AuthHandler :AuthOptions= {
     },
 
     session({ session, token }) {
+      
       session = token.user as any
       return Promise.resolve(session)
     },

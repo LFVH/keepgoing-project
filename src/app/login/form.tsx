@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import Link from 'next/link';
 import { signIn } from 'next-auth/react';
 import { useState } from 'react';
-import { LoginFormSchema } from '@/app/auth/definitions';
+import { LoginFormSchema } from '@/app/api/auth/auth/definitions';
 
 interface LoginFormProps {
   onLoginSuccess: () => void;

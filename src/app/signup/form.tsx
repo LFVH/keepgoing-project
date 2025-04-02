@@ -3,7 +3,7 @@
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { signup } from '@/app/auth/auth';
+import { signup } from '@/app/api/auth/auth/signup';
 import { useFormStatus } from 'react-dom';
 import { useActionState, useState } from 'react';
 import { signIn } from "next-auth/react"
