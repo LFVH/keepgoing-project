@@ -1,0 +1,79 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Usuario {
+  id        String   @id @default(uuid())
+  name      String
+  email     String   @unique
+  password  String
+  updatedAt        DateTime @updatedAt
+  createdAt DateTime @default(now())
+  linhasDiario LinhasDiario[]
+  refreshToken                RefreshToken?
+}
+
+model RefreshToken {
+  id            Int      @id @default(autoincrement())
+  expiresIn     Int
+  user          Usuario   @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: Cascade)
+  userId        String @unique
+  exercicios    Exercicio[]
+  updatedAt     DateTime @updatedAt
+  createdAt     DateTime @default(now())
+}
+
+model Exercicio {
+  id        Int      @id @default(autoincrement())
+  nome      String   @unique
+  updatedAt        DateTime @updatedAt
+  createdAt DateTime @default(now())
+  execucoes Execucao[]
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id])
+  usuarioId String
+}
+
+model Treino {
+  id             Int      @id @default(autoincrement())
+  nome           String   @unique
+  comentarioGeral String?
+  corCalendario  String   
+  updatedAt      DateTime @default(now())
+  createdAt      DateTime @default(now())
+  linhasDiario   LinhasDiario[]
+  execucoes      Execucao[]
+}
+
+model LinhasDiario {
+  id        Int      @id @default(autoincrement())
+  usuario   Usuario  @relation(fields: [usuarioId], references: [id])
+  usuarioId String
+  treino    Treino   @relation(fields: [treinoId], references: [id])
+  treinoId  Int
+  data      DateTime
+  peso      Decimal
+  updatedAt        DateTime @updatedAt
+  createdAt DateTime @default(now())
+  execucoes Execucao[]
+}
+
+model Execucao {
+  id                Int      @id @default(autoincrement())
+  reps              Int
+  sets              Int
+  carga             Decimal
+  exercicio        Exercicio @relation(fields: [exercicioId], references: [id])
+  exercicioId      Int
+  treino           Treino?   @relation(fields: [treinoId], references: [id])
+  treinoId         Int?
+  diario           LinhasDiario? @relation(fields: [diarioId], references: [id])
+  diarioId         Int?
+  comentarioExecucao String?
+  updatedAt        DateTime @updatedAt
+  createdAt        DateTime @default(now())
+}
