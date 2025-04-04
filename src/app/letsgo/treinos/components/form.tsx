@@ -1,14 +1,10 @@
 "use client"
-import { Container } from "../styles"
-import Button from "@/app/_components/elementos/button"
+//import Button from "@/app/_components/elementos/button"
+import { Button } from '@/components/ui/button';
 import { useEffect, useRef, useState } from "react"
 import { toast } from "react-toastify"
-import UploadImage from "@/app/_components/uploadImage/page"
-import api from "@/lib/axios"
-import HandleUploadFile from "@/app/_components/uploadFile"
 import { useForm } from "react-hook-form"
 import { useQuery } from "@tanstack/react-query"
-import { createId } from "@paralleldrive/cuid2"
 import { useRouter, useSearchParams  } from "next/navigation"
 
 export interface IForm {
@@ -25,16 +21,16 @@ export interface IForm {
 const FormPessoa = ({ onSuccess }: any) => {
   const searchParams = useSearchParams()
   const router = useRouter();
-  const pessoaId = searchParams.get("pessoa")
+  const treinoId = searchParams.get("pessoa")
   const { data: pessoa, isSuccess, isLoading } = useQuery({
     initialData: [],
     refetchOnWindowFocus: false,
-    queryKey: [ pessoaId],
-    enabled: !!pessoaId,
+    queryKey: [ treinoId],
+    enabled: !!treinoId,
     queryFn: async () => {
-    const response = await api.get(`/pessoas/id/${pessoaId}`)
-    console.log(response.data.body.data )
-    return response.data.body.data || {}
+      const response = await fetch(`/api/treino/${treinoId}`, { method: "GET" });
+      const data = await response.json();
+      return data.data || [];
     },
   })
   const imageInput = useRef<{ file: File } | null>(null);
@@ -43,19 +39,19 @@ const FormPessoa = ({ onSuccess }: any) => {
   const [setorSelecionado, setSetorSelecionado] = useState("");
   const [areaSelecionada, setAreaSelecionada] = useState("");
 
-  const { 
-    data: setoresSelect
-   } = useQuery({
-    queryKey: ["getSetoresSelect"],
-    initialData: [],
-    queryFn: async () => {
-      const response = await api.get(`/pessoas/setorAtual`)
-      return response.data.body.data || []
-    },
-  })
+  // const { 
+  //   data: setoresSelect
+  //  } = useQuery({
+  //   queryKey: ["getSetoresSelect"],
+  //   initialData: [],
+  //   queryFn: async () => {
+  //     const response = await api.get(`/pessoas/setorAtual`)
+  //     return response.data.body.data || []
+  //   },
+  // })
 
 
-  const areasDisponiveis = setoresSelect.find((setor:any) => setor.id === setorSelecionado)?.areas || [];
+  //const areasDisponiveis = setoresSelect.find((setor:any) => setor.id === setorSelecionado)?.areas || [];
 
   useEffect(() => {
       const setDataValues = () => {
@@ -92,10 +88,6 @@ const FormPessoa = ({ onSuccess }: any) => {
       try {
         const imageUrl = existingImageUrl || ""; 
     
-        const uploadedImageUrl = image
-        ? await HandleUploadFile(image, "profile", createId())
-        : imageUrl
-    
         const pessoa = {
           name,
           telefone,
@@ -103,16 +95,12 @@ const FormPessoa = ({ onSuccess }: any) => {
           email,
           cargo,
           area,
-          image: uploadedImageUrl,
           setorId,
         };
     
-        const response = id
-          ? await api.put(`/pessoas/${id}`, pessoa) 
-          : await api.post("/pessoas", pessoa); 
-    
-        if (response.status === 200 && response.data.success) {
-          return response.data.body.message;
+        const response = id ? await fetch(`/api/treino/${id}`, { method: "PUT" }) : await fetch(`/api/treino`, { method: "POST" }); 
+        if (response.status === 200 && response.json) {
+          return response.json.toString ;
         }
       } catch (error: any) {
         console.log(error);
@@ -173,7 +161,7 @@ const FormPessoa = ({ onSuccess }: any) => {
           },
           pending: isEditing ? "Atualizando ..." : "Criando ...",
           success: {
-            render({ data }) {
+            render({ data }): any {
               onSuccess();
               return data || (isEditing ? "Atualização finalizada com sucesso" : "Pessoa inserida com sucesso");
             },
@@ -182,11 +170,10 @@ const FormPessoa = ({ onSuccess }: any) => {
       );
     };
   return (
-    <Container>
+    <div>
       <div className="content">
         <form onSubmit={handleSubmit(onSubmit)}>
           <div className="line-input">
-            <UploadImage ref={imageInput} />
             <div className="column-input">
               <div className="input-container">
                 <label htmlFor="name">Nome</label>
@@ -221,11 +208,11 @@ const FormPessoa = ({ onSuccess }: any) => {
                     className="border p-2 rounded"
                   >
                     <option value="">Selecione um setor</option>
-                    {setoresSelect.map((setor:any) => (
+                    {/* {setoresSelect.map((setor:any) => (
                       <option key={setor.id} value={setor.id}>
                         {setor.nome}
                       </option>
-                    ))}
+                    ))} */}
                   </select>
                   <select
                     value={areaSelecionada}
@@ -234,21 +221,23 @@ const FormPessoa = ({ onSuccess }: any) => {
                     disabled={!setorSelecionado} 
                   >
                     <option value="">Selecione uma área</option>
-                    {areasDisponiveis.map((area:any) => (
+                    {/* {areasDisponiveis.map((area:any) => (
                       <option key={area} value={area}>
                         {area}
                       </option>
-                    ))}
+                    ))} */}
                   </select>
                 </div>
               </div>
             </div>
           </div>
 
-          <Button title={isEditing ? "Salvar" : "Adicionar"} exec={() => {}} />
+          { <Button 
+          disabled={isLoading} type="submit"
+          title={isEditing ? "Salvar" : "Adicionar"} onClick={() => {}} /> }
         </form>
       </div>
-    </Container>
+    </div>
   )
 }
 

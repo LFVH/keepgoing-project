@@ -55,7 +55,9 @@ export const LoginForm = ({ onLoginSuccess }: LoginFormProps) => {
   };
 
   return (
+    
     <form onSubmit={handleSubmit}>
+      <div className="bg-red-500 p-4 text-white">Teste Tailwind</div>
       <div className="flex flex-col gap-2">
         <div>
           <Label htmlFor="email">Email</Label>

@@ -2,7 +2,7 @@
 import { ToastContainer, toast } from "react-toastify"
 import "react-toastify/dist/ReactToastify.css"
 import { ReactNode } from "react"
-import { SessionProvider, useSession } from "next-auth/react"
+import { SessionProvider } from "next-auth/react"
 import { QueryClientProvider, QueryClient } from "@tanstack/react-query"
 
 

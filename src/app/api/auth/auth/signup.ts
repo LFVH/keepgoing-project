@@ -61,7 +61,6 @@ export async function signup(
 
   // 4. Create a session for the user
   const userId = userDB.id.toString();
-  console.log(userId);
   return {data:{
       name: userDB.name,
       email: userDB.email,
