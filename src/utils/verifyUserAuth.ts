@@ -5,22 +5,21 @@ import prisma from "@/database/prisma";
 
 export async function verifyUser(req: NextRequest) {
   const session = await getServerSession(authHandler);
-
-  if (!session || !session.user?.id) {
+  if (!session || !session.id) {
     return NextResponse.json(
       { success: false, body: { message: "Usuário não autenticado." } },
       { status: 401 }
     );
   }
 
-  const userId = session.user.id;
+  const userId = session.id;
 
   // Verifica se o usuário existe no banco de dados
   const userExists = await prisma.usuario.findUnique({
     where: { id: userId },
   });
 
-  if (!userExists) {
+  if (!userExists || !userId) {
     return NextResponse.json(
       { success: false, body: { message: "Usuário não encontrado." } },
       { status: 400 }

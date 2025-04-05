@@ -9,22 +9,32 @@ const buttonVariants = cva(
   {
     variants: {
       variant: {
-        default:
-          "bg-primary text-primary-foreground shadow hover:bg-primary/90",
-        destructive:
-          "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
-        outline:
-          "border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground",
-        secondary:
-          "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80",
+        default: "bg-primary text-primary-foreground shadow hover:bg-primary/90",
+        destructive: "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
+        outline: "border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground",
+        secondary: "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
+        treino: [
+          "border border-solid rounded-full",
+          "border-black/8 dark:border-white/145", // Cores personalizadas
+          "hover:border-transparent",
+          "hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a]",
+          "transition-colors",
+          "bg-primary text-primary-foreground shadow",
+        ].join(" "),
       },
       size: {
-        default: "h-9 px-4 py-2",
+        default: "h-12 min-w-48 px-4 py-2",
         sm: "h-8 rounded-md px-3 text-xs",
         lg: "h-10 rounded-md px-8",
         icon: "h-9 w-9",
+        treino: [
+          "h-10 sm:h-12", 
+          "px-8 sm:px-12", 
+          "min-w-64 sm:min-w-80", 
+          "text-sm sm:text-base",
+        ].join(" "),
       },
     },
     defaultVariants: {
@@ -32,7 +42,7 @@ const buttonVariants = cva(
       size: "default",
     },
   }
-)
+);
 
 export interface ButtonProps
   extends React.ButtonHTMLAttributes<HTMLButtonElement>,

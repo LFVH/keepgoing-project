@@ -1,5 +1,5 @@
 import './globals.css';
-import React from 'react';
+import React, { Suspense } from 'react';
 import ClientProviders from "@/utils/Providers"
 
 export default function RootLayout({
@@ -14,7 +14,9 @@ export default function RootLayout({
         
           <ClientProviders>
 
-            {children}
+          <Suspense fallback={<div>Carregando página...</div>}>
+              {children}
+          </Suspense>
           </ClientProviders>
         </body>
       </html>

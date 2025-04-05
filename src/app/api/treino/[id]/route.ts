@@ -33,6 +33,10 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const userId = await verifyUser(req);
+    if (userId instanceof NextResponse) {
+      return userId;} 
+
     const id = parseInt((await  params).id, 10);
 
     if (isNaN(id)) {
@@ -40,7 +44,7 @@ export async function GET(
     }
 
     const treino = await prisma.treino.findUnique({
-      where: { id },
+      where: { id, usuarioId: userId },
     });
 
     if (!treino) {
@@ -54,23 +58,36 @@ export async function GET(
   }
 }
 
-export async function PUT(
-  req: NextRequest,
-  
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function PUT(req: NextRequest) {
   try {
-    const id = parseInt((await  params).id, 10);
+    const userId = await verifyUser(req);
+    if (userId instanceof NextResponse) {
+      return userId;} 
 
-    await prisma.treino.delete({
-      where: { id },
+    const requestData = await req.json();
+    const { id, nome } = requestData;
+
+    // Criar página no banco de dados
+    const treinoDB = await prisma.treino.update({
+      where: { id, usuarioId: userId },
+      data: {
+        nome,
+      },
+      
     });
 
-    return NextResponse.json({ message: "Treino excluída com sucesso" });
-  } catch (error) {
-    console.log(error);
     return NextResponse.json(
-      { message: "Erro ao excluir a treino" },
+      {
+        success: true,
+        message: "Treino atualizado com sucesso.",
+        data: { id: treinoDB.id }
+      },
+      { status: 201 }
+    );
+  } catch (error) {
+    console.error("Erro ao atualizar treino:", error);
+    return NextResponse.json(
+      { success: false,  message: "Houve um erro no servidor" },
       { status: 500 }
     );
   }

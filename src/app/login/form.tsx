@@ -57,7 +57,6 @@ export const LoginForm = ({ onLoginSuccess }: LoginFormProps) => {
   return (
     
     <form onSubmit={handleSubmit}>
-      <div className="bg-red-500 p-4 text-white">Teste Tailwind</div>
       <div className="flex flex-col gap-2">
         <div>
           <Label htmlFor="email">Email</Label>
@@ -65,14 +64,14 @@ export const LoginForm = ({ onLoginSuccess }: LoginFormProps) => {
           {errors.email && <p className="text-sm text-red-500">{errors.email}</p>}
         </div>
         <div className="mt-4">
+          <Input id="password" type="password" name="password" required />
+          {errors.password && <p className="text-sm text-red-500">{errors.password}</p>}
           <div className="flex items-center justify-between">
             <Label htmlFor="password">Password</Label>
             <Link className="text-sm underline" href="#">
               Forgot your password?
             </Link>
           </div>
-          <Input id="password" type="password" name="password" required />
-          {errors.password && <p className="text-sm text-red-500">{errors.password}</p>}
         </div>
         {errors.general && (
           <p className="text-sm text-red-500">{errors.general}</p>

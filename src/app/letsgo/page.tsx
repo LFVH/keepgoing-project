@@ -1,82 +1,48 @@
 'use client'
 import { Button } from '@/components/ui/button';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from '@/components/ui/card';
 import { LogOutIcon } from '@/components/ui/icons';
 import { signOut } from 'next-auth/react';
-import Image from 'next/image';
+import Link from 'next/link';
 
 export default function Page() {
-  const orders = [
-    {
-      id: 1,
-      name: 'Crispy Chicken Burger',
-      image: '/placeholder.svg',
-      orderId: '#123456',
-    },
-    {
-      id: 2,
-      name: 'Iced Latte',
-      image: '/placeholder.svg',
-      orderId: '#654321',
-    },
-    {
-      id: 3,
-      name: 'Pepperoni Pizza',
-      image: '/placeholder.svg',
-      orderId: '#987654',
-    },
-    {
-      id: 5,
-      name: 'Pepperoni Pizza',
-      image: '/placeholder.svg',
-      orderId: '#987654',
-    },
-    {
-      id: 4,
-      name: 'Pepperoni Pizza',
-      image: '/placeholder.svg',
-      orderId: '#987654',
-    },
-    {
-      id: 6,
-      name: 'Pepperoni Pizza',
-      image: '/placeholder.svg',
-      orderId: '#987654',
-    },
-    {
-      id: 7,
-      name: 'Pepperoni Pizza',
-      image: '/placeholder.svg',
-      orderId: '#987654',
-    },
-    {
-      id: 8,
-      name: 'Pepperoni Pizza',
-      image: '/placeholder.svg',
-      orderId: '#987654',
-    },
-    {
-      id: 9,
-      name: 'Pepperoni Pizza',
-      image: '/placeholder.svg',
-      orderId: '#987654',
-    },
-    {
-      id: 10,
-      name: 'Pepperoni Pizza',
-      image: '/placeholder.svg',
-      orderId: '#987654',
-    },
-  ];
   return (
     <div className="grid gap-4 md:gap-8">
-      <Card>
+          <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
+            <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
+             <Button asChild title="Registrar treino feito!" variant="treino" size="treino" >
+                <Link href="/letsgo/registrarTreinoDia">
+                Registrar Treino Realizado
+                </Link>
+             </Button>
+              <Button asChild title="Histórico de treinos já realizados" variant="treino" size="treino" >
+                <Link href="/letsgo/diario">
+                   Histórico treinos realizados
+                </Link>
+              </Button>
+              <Button asChild title="Ver, Adicionar ou Remover treinos pre cadastrados" variant="treino" size="treino" >
+                <Link href="/letsgo/treinos">
+                  Plano de treinos
+                </Link>
+              </Button>
+            </main>
+            <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
+              <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
+      
+                  Thanks!
+      
+              </ol>
+              <button
+                onClick={() => signOut({ callbackUrl: "/" })}
+                className="left-4 bottom-4 flex items-center gap-2 p-2 text-white bg-red-500 rounded-md hover:bg-red-600 transition"
+              > 
+                <LogOutIcon className="w-5 h-5" /> Sair
+              </button>
+            </footer>
+          </div>
+    </div>
+  );
+}
+      {/* <Card>
         <CardHeader>
           <CardTitle>Today&apos;s Orders</CardTitle>
           <CardDescription>
@@ -114,13 +80,4 @@ export default function Page() {
             ))}
           </div>
         </CardContent>
-      </Card>
-      <button
-        onClick={() => signOut({ callbackUrl: "/" })}
-        className="fixed left-4 bottom-4 flex items-center gap-2 p-2 text-white bg-red-500 rounded-md hover:bg-red-600 transition"
-      >
-        <LogOutIcon className="w-5 h-5" /> Sair
-      </button>
-    </div>
-  );
-}
+      </Card> */}

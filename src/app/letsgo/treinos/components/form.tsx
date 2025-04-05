@@ -1,6 +1,7 @@
 "use client"
 //import Button from "@/app/_components/elementos/button"
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { useEffect, useRef, useState } from "react"
 import { toast } from "react-toastify"
 import { useForm } from "react-hook-form"
@@ -9,36 +10,28 @@ import { useRouter, useSearchParams  } from "next/navigation"
 
 export interface IForm {
   id?      : string,
-  name     : string,
-  telefone : string,
-  whatsapp : string,
-  email    : string,
-  cargo    : string,
-  area     : string,
-  image    : File,
+  nome     : string,
+  coment   : string,
+  corCalendario : string,
 }
 
-const FormPessoa = ({ onSuccess }: any) => {
+const FormTreino = ({ onSuccess }: any) => {
   const searchParams = useSearchParams()
-  const router = useRouter();
-  const treinoId = searchParams.get("pessoa")
-  const { data: pessoa, isSuccess, isLoading } = useQuery({
-    initialData: [],
+  const treinoId = searchParams.get("treino")
+  const { data: treino, isSuccess, isLoading } = useQuery({
     refetchOnWindowFocus: false,
     queryKey: [ treinoId],
     enabled: !!treinoId,
     queryFn: async () => {
       const response = await fetch(`/api/treino/${treinoId}`, { method: "GET" });
       const data = await response.json();
-      return data.data || [];
+      return data.treino || [];
     },
   })
-  const imageInput = useRef<{ file: File } | null>(null);
   const { register, handleSubmit, setValue, reset} = useForm<IForm>()
   const [isEditing, setIsEditing] = useState(false);
   const [setorSelecionado, setSetorSelecionado] = useState("");
   const [areaSelecionada, setAreaSelecionada] = useState("");
-
   // const { 
   //   data: setoresSelect
   //  } = useQuery({
@@ -55,52 +48,42 @@ const FormPessoa = ({ onSuccess }: any) => {
 
   useEffect(() => {
       const setDataValues = () => {
-        if (isSuccess && pessoa) {
+        if (isSuccess && treino) {
           setIsEditing(true);
-          setSetorSelecionado(pessoa?.setorId);
-          setAreaSelecionada(pessoa?.area);
+          setSetorSelecionado(treino?.setorId);
+          setAreaSelecionada(treino?.area);
           reset({
-            id       : pessoa?.id,
-            name     : pessoa?.name     || "",
-            telefone : pessoa?.telefone || "",
-            whatsapp : pessoa?.whatsapp || "",
-            email    : pessoa?.email    || "",
-            cargo    : pessoa?.cargo    || "",
-            area     : pessoa?.area     || "",
+            id       : treino?.id,
+            nome     : treino?.nome     || "",
+            coment : treino?.comentarioGeral || "",
+            corCalendario : treino?.corCalendario || "",
           })
         }
       }
       setDataValues()
-    }, [pessoa, isSuccess, reset, setValue]);
+    }, [treino, isSuccess, reset, setValue]);
 
-    async function handlePessoa(
+    async function handleTreino(
       id: string | null,
-      name: string,
-      telefone: string,
-      whatsapp: string,
-      email: string,
-      cargo: string,
-      area: string,
-      setorId: string,
-      image: File | null,
-      existingImageUrl?: string
+      nome: string,
+      comment: string,
+      corCalendario: string,
     ) {
       try {
-        const imageUrl = existingImageUrl || ""; 
     
-        const pessoa = {
-          name,
-          telefone,
-          whatsapp,
-          email,
-          cargo,
-          area,
-          setorId,
+        const treino = {
+          nome,
+          comentarioGeral: comment,
+          corCalendario: corCalendario,
         };
     
-        const response = id ? await fetch(`/api/treino/${id}`, { method: "PUT" }) : await fetch(`/api/treino`, { method: "POST" }); 
-        if (response.status === 200 && response.json) {
-          return response.json.toString ;
+        const response = id ? await fetch(`/api/treino/${id}`, { method: "PUT",headers: {
+          "Content-Type": "application/json", 
+        }, body: JSON.stringify(treino), }) : await fetch(`/api/treino`, { method: "POST",headers: {
+          "Content-Type": "application/json", 
+        },body: JSON.stringify(treino), }); 
+        if (!response.ok) {
+          return response.json.toString ; 
         }
       } catch (error: any) {
         console.log(error);
@@ -113,45 +96,29 @@ const FormPessoa = ({ onSuccess }: any) => {
     }
 
     const onSubmit = async (data: IForm) => {
-      const image = imageInput.current?.file || null;
-      const name = data.name.trim();
-      const telefone = data.telefone.trim();
-      const whatsapp = data.whatsapp.trim();
-      const email = data.email.trim();
-      const cargo = data.cargo.trim();
-      const area = areaSelecionada;
-      const setorId = setorSelecionado;
+      const nome = data.nome.trim();
+      const comment = data.coment.trim();
+      const corCalendario = data.corCalendario.trim();
     
-      if (!name) {
+      if (!nome) {
         throw new Error("O nome é obrigatório");
       }
       if (
         isEditing &&
-        name === pessoa?.name &&
-        telefone === pessoa?.telefone &&
-        whatsapp === pessoa?.whatsapp &&
-        email === pessoa?.email &&
-        cargo === pessoa?.cargo &&
-        area === pessoa?.area &&
-        setorId === pessoa?.setorId &&
-        !image
+        nome === treino?.nome &&
+        comment === treino?.comentarioGeral &&
+        corCalendario === treino?.corCalendario
       ) {
         toast.info("Nenhuma alteração detectada.");
         return;
       }
     
       toast.promise(
-        handlePessoa(
+        handleTreino(
           isEditing ? data?.id ?? null : null,
-          name,
-          telefone,
-          whatsapp,
-          email,
-          cargo,
-          area,
-          setorId,
-          image,
-          isEditing ? pessoa?.image : undefined
+          nome,
+          comment,
+          corCalendario,
         ),
         {
           error: {
@@ -163,82 +130,117 @@ const FormPessoa = ({ onSuccess }: any) => {
           success: {
             render({ data }): any {
               onSuccess();
-              return data || (isEditing ? "Atualização finalizada com sucesso" : "Pessoa inserida com sucesso");
+              return data || (isEditing ? "Atualização finalizada com sucesso" : "Treino criado com sucesso");
             },
           },
         }
       );
     };
   return (
-    <div>
-      <div className="content">
-        <form onSubmit={handleSubmit(onSubmit)}>
-          <div className="line-input">
-            <div className="column-input">
-              <div className="input-container">
-                <label htmlFor="name">Nome</label>
-                <input {...register("name")} id="name" type="title"/>
-              </div>
-              <div className="line-input">
-                <div className="input-container">
-                  <label htmlFor="email">E-mail</label>
-                  <input {...register("email")} id="email" type="email"/>
-                </div>
-                <div className="input-container">
-                  <label htmlFor="telefone">Telefone</label>
-                  <input {...register("telefone")} id="telefone" type="text"/>
-                </div>
-                <div className="input-container">
-                  <label htmlFor="whatsapp">Whatsapp</label>
-                  <input {...register("whatsapp")} id="whatsapp" type="text"/>
-                </div>
-                <div className="input-container">
-                  <label htmlFor="cargo">Cargo</label>
-                  <input {...register("cargo")} id="cargo" type="text"/>
-                </div>
-              </div>
-              <div className="line-input">
-                <div className="flex flex-col gap-4">
-                  <select
-                    value={setorSelecionado}
-                    onChange={(e) => {
-                      setSetorSelecionado(e.target.value);
-                      setAreaSelecionada(""); 
-                    }}
-                    className="border p-2 rounded"
-                  >
-                    <option value="">Selecione um setor</option>
-                    {/* {setoresSelect.map((setor:any) => (
-                      <option key={setor.id} value={setor.id}>
-                        {setor.nome}
-                      </option>
-                    ))} */}
-                  </select>
-                  <select
-                    value={areaSelecionada}
-                    onChange={(e) => setAreaSelecionada(e.target.value)}
-                    className="border p-2 rounded"
-                    disabled={!setorSelecionado} 
-                  >
-                    <option value="">Selecione uma área</option>
-                    {/* {areasDisponiveis.map((area:any) => (
-                      <option key={area} value={area}>
-                        {area}
-                      </option>
-                    ))} */}
-                  </select>
-                </div>
-              </div>
-            </div>
-          </div>
+<div className="max-w-2xl mx-auto p-4 bg-white rounded-lg shadow-sm">
+  <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+    <div className="space-y-4">
+      {/* Nome Field */}
+      <div>
+        <label htmlFor="nome" className="block text-sm font-medium text-gray-700 mb-1">
+          Nome
+        </label>
+        <input
+          {...register("nome")}
+          id="nome"
+          type="text"
+          className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+        />
+      </div>
 
-          { <Button 
-          disabled={isLoading} type="submit"
-          title={isEditing ? "Salvar" : "Adicionar"} onClick={() => {}} /> }
-        </form>
+        <div>
+          <label htmlFor="coments" className="block text-sm font-medium text-gray-700 mb-1">
+            Comentários sobre o treino
+          </label>
+          <input
+            {...register("coment")}
+            id="comment"
+            type="text"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="corCalendario" className="block text-sm font-medium text-gray-700 mb-1">
+            Comentários sobre o treino
+          </label>
+          <input
+            {...register("corCalendario")}
+            id="corCalendario"
+            type="text"
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          />
+        </div>
+       
+
+      {/* Setor and Area Selects */}
+      <div className="space-y-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Setor
+          </label>
+          <select
+            value={setorSelecionado}
+            onChange={(e) => {
+              setSetorSelecionado(e.target.value);
+              setAreaSelecionada(""); 
+            }}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+          >
+            <option value="">Selecione um setor</option>
+            {/* {setoresSelect.map((setor:any) => (
+              <option key={setor.id} value={setor.id}>
+                {setor.nome}
+              </option>
+            ))} */}
+          </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Área
+          </label>
+          <select
+            value={areaSelecionada}
+            onChange={(e) => setAreaSelecionada(e.target.value)}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            disabled={!setorSelecionado}
+          >
+            <option value="">Selecione uma área</option>
+            {/* {areasDisponiveis.map((area:any) => (
+              <option key={area} value={area}>
+                {area}
+              </option>
+            ))} */}
+          </select>
+        </div>
       </div>
     </div>
+
+    {/* Submit Button */}
+    <button
+      type="submit"
+      disabled={isLoading}
+      className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
+        isLoading ? 'opacity-70 cursor-not-allowed' : ''
+      }`}
+    >
+      {isLoading ? (
+        <span>Processando...</span>
+      ) : isEditing ? (
+        'Salvar'
+      ) : (
+        'Adicionar'
+      )}
+    </button>
+  </form>
+</div>
   )
 }
 
-export default FormPessoa
+export default FormTreino

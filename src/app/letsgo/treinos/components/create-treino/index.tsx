@@ -1,6 +1,6 @@
 "use client"
-import FormPessoa from "../form";
+import FormTreino from "../form";
 
 export default function AdicionarTreino ({ onSuccess }: { onSuccess?: () => void }) {
-  return <FormPessoa onSuccess={onSuccess}/>;
+  return <FormTreino onSuccess={onSuccess}/>;
 }
