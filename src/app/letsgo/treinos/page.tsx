@@ -114,31 +114,54 @@ const Treinos = () => {
             key={treino.id}  
             className="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow duration-200 relative"
           >
-            <Panel eventKey={treino.id} header="">
-              <div className="flex flex-col h-full">
-                <div className="flex-grow">
-                  <span className="text-lg font-semibold text-gray-800">{treino?.nome}</span>
-                </div>
-                <div className="flex justify-end space-x-2 mt-2">
-                  <button
-                    onClick={() => {
-                      router.push(`?editar-treino=open&treino=${treino.id}`)
-                    }}
-                    className="text-blue-500 hover:text-blue-700 p-1 rounded-full hover:bg-blue-50"
-                    title="Editar"
-                  >
-                    <LuPencil className="w-5 h-5" />
-                  </button>
-                  <button
-                    onClick={() => handleDeleteTreino(treino.id)}
-                    className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50"
-                    title="Excluir"
-                  >
-                    <FaTrashAlt className="w-5 h-5" />
-                  </button>
+            <Panel eventKey={treino.id} header="" className="border rounded-lg shadow-sm hover:shadow-md transition-shadow">
+            <div className="flex flex-col h-full p-4">
+              <div className="flex items-start space-x-3">
+                {/* Quadrado com a cor do treino */}
+                <div 
+                  className="w-5 h-5 rounded-sm flex-shrink-0 mt-1" 
+                  style={{ backgroundColor: treino.corCalendario || '#cccccc' }}
+                />
+                
+                <div className="flex-grow flex flex-col">
+                  <div className="flex justify-between items-start">
+                    <span className="text-lg font-semibold text-gray-800">{treino?.nome}</span>
+                  </div>
+                  
+                  <div className="flex justify-between items-end mt-1">
+                    {/* Comentário geral truncado */}
+                    <div className="flex-grow pr-4">
+                      {treino?.comentarioGeral && (
+                        <p className="text-gray-600 text-sm">
+                          {treino.comentarioGeral.length > 60 
+                            ? `${treino.comentarioGeral.substring(0, 60)}...` 
+                            : treino.comentarioGeral}
+                        </p>
+                      )}
+                    </div>
+                    
+                    {/* Botões alinhados à direita */}
+                    <div className="flex space-x-2">
+                      <button
+                        onClick={() => router.push(`?editar-treino=open&treino=${treino.id}`)}
+                        className="text-blue-500 hover:text-blue-700 p-1 rounded-full hover:bg-blue-50 transition-colors"
+                        title="Editar"
+                      >
+                        <LuPencil className="w-5 h-5" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteTreino(treino.id)}
+                        className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition-colors"
+                        title="Excluir"
+                      >
+                        <FaTrashAlt className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </div>
-            </Panel>
+            </div>
+          </Panel>
           </div>
         )
       })}

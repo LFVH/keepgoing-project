@@ -1,0 +1,48 @@
+App: registrar treino
+Paginas:
+about
+assinar por X tempo.
+login>sempre logado>email e senha
+--Treinei hoje
+--Cadastrar treino
+--Calendario marcando dias treinados
+---qual treino fim conferir/add exercicios
+----lista exercicios? fim ajustar pesos
+-----pesos? fim
+testeteste@2
+*Exercicio: tabela fixa com nomes
+-- id int pk incremental 
+-- nome @unique
+
+*Execucao:
+--id int pk incremental 
+--reps int
+--sets int
+--exercicio Exercicio
+--comentarioExecucao String
+
+*Treino: (ABC)
+-- id int pk incremental 
+-- nome string @unique
+-- comentarioGeral string
+-- corCalendario
+-- execucoesPre Execucao[]
+
+*Usuario
+id @id @default(cuid())
+login
+senha
+peso
+
+*SessaoUsuario
+id
+usuarioId Usuario
+
+*Diario
+--id int pk incremental 
+--usuario Usuario @rel
+--treino Treino
+--execucoesEfet Execucao[]
+--data
+--updatedAt DateTime @updatedAt
+--createdAt DateTime @default(now())

@@ -28,16 +28,21 @@ export async function GET(
 export async function POST(req: NextRequest) {
   try {
     const userId = await verifyUser(req);
-    if (userId instanceof NextResponse) {
-      return userId;} 
-
     const requestData = await req.json();
-    const { nome } = requestData;
-
-    // Criar página no banco de dados
+    
+    if (userId instanceof NextResponse) return userId;
+    if (!requestData.nome) throw new Error("O campo 'nome' é obrigatório");
+    
+    const { nome,
+            comentarioGeral,
+            corCalendario,
+      } = requestData;
+  
     const treinoDB = await prisma.treino.create({
       data: {
         nome,
+        comentarioGeral,
+        corCalendario,
         usuario: { connect: { id: userId } },
       },
     });

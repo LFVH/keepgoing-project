@@ -11,11 +11,19 @@ export async function DELETE(
     const userId = await verifyUser(req);
     if (userId instanceof NextResponse) return userId; 
 
-    await prisma.treino.delete({
-      where: { id,
-        usuarioId: userId,
-       },
-    });
+    const requestData = await req.json();
+
+    const treinoId = parseInt(requestData.treinoId)
+
+    await prisma.execucaoPlano.delete({
+      where: {
+        id: id,
+        treino: {
+          id: treinoId,
+          usuarioId: userId
+        }
+      }
+    })
 
     return NextResponse.json({ message: "Treino excluído com sucesso" });
   } catch (error) {
@@ -49,7 +57,6 @@ export async function GET(
           include: {
             exercicio: {
               select: {
-                id: true,
                 nome: true,
               },
             },
