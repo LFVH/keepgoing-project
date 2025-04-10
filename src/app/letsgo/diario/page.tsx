@@ -66,10 +66,10 @@ const Treinos = () => {
       }
     );
   }
-  const isCreateTreinoModalOpen = searchParams.get("criar-treino") === "open"
+  const isCreateTreinoModalOpen = searchParams.get("boa-segue-firme") === "open"
   const editEventModal =
-    searchParams.get("editar-treino") === "open" &&
-    searchParams.get("treino")?.trim() !== ""
+    searchParams.get("editar-diario") === "open" &&
+    searchParams.get("registro")?.trim() !== ""
 
   const handleSuccess = () => {
     console.log("entrou no original")
@@ -91,7 +91,7 @@ const Treinos = () => {
     ) : (
       <Button
         title="Adicionar"
-        onClick={() => router.push("?criar-treino=open")}
+        onClick={() => router.push("?boa-segue-firme=open")}
         className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
       >
         Adicionar
@@ -144,7 +144,7 @@ const Treinos = () => {
                     {/* Botões alinhados à direita */}
                     <div className="flex space-x-2">
                       <button
-                        onClick={() => router.push(`?editar-treino=open&treino=${treino.id}`)}
+                        onClick={() => router.push(`?editar-diario=open&registro=${treino.id}`)}
                         className="text-blue-500 hover:text-blue-700 p-1 rounded-full hover:bg-blue-50 transition-colors"
                         title="Editar"
                       >

@@ -13,13 +13,13 @@ export async function DELETE(
 
     const requestData = await req.json();
 
-    const treinoId = parseInt(requestData.treinoId)
+    const diarioId = parseInt(requestData.diarioId)
 
-    await prisma.execucaoPlano.delete({
+    await prisma.execucaoReal.delete({
       where: {
         id: id,
-        treino: {
-          id: treinoId,
+        diario: {
+          id: diarioId,
           usuarioId: userId
         }
       }
@@ -75,7 +75,6 @@ export async function GET(
     return NextResponse.json({ message: "Erro ao obter treino" }, { status: 500 });
   }
 }
-  
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -119,4 +118,5 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       { status: 500 }
     );
   }
-}*/
+}
+*/

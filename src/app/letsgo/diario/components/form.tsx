@@ -70,7 +70,7 @@ const FormTreino = ({ onSuccess }: any) => {
     tempo: null, 
   })
   const searchParams = useSearchParams()
-  const treinoId = searchParams.get("treino")
+  const treinoId = searchParams.get("registro")
   const { data: treino, isSuccess, isLoading, refetch } = useQuery<TreinoComExecucoes>({
     refetchOnWindowFocus: false,
     queryKey: ['treino', treinoId],
@@ -210,7 +210,7 @@ const FormTreino = ({ onSuccess }: any) => {
        console.log("fail");
         return;
       } else{
-        await router.push(`?editar-treino=open&treino=${submitTreinoResponse.data.id}&fastaddexec=true`, {
+        await router.push(`?editar-diario=open&registro=${submitTreinoResponse.data.id}&fastaddexec=true`, {
           scroll: false 
         });
       }

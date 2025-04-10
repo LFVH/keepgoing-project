@@ -32,42 +32,42 @@ export async function POST(req: NextRequest) {
     const requestData = await req.json();
 
     const { 
-      treinoId,
+      diarioId,
       exercicioId,
       reps,             
       sets,             
       carga,             
       tempo,             
-      ordem,             
-      comentarioExecucao
+      comentarioExecucao,
+      percepcao
   } = requestData;
   
   const execucaoInsert = {
-    treinoId: isNaN(parseInt(treinoId)) ? null : parseInt(treinoId),
+    diarioId: isNaN(parseInt(diarioId)) ? null : parseInt(diarioId),
     exercicioId: isNaN(parseInt(exercicioId)) ? null : parseInt(exercicioId),
     reps: reps !== undefined ? (isNaN(parseInt(reps)) ? null : parseInt(reps)) : null,
     sets: sets !== undefined ? (isNaN(parseInt(sets)) ? null : parseInt(sets)) : null,
     carga: carga !== undefined ? (isNaN(parseFloat(carga)) ? null : parseFloat(carga)) : null,
     tempo: tempo !== undefined ? (isNaN(parseInt(tempo)) ? null : parseInt(tempo)) : null,
-    ordem: ordem !== undefined ? (isNaN(parseInt(ordem)) ? null : parseInt(ordem)) : null,
-    comentarioExecucao: comentarioExecucao || null
+    comentarioExecucao: comentarioExecucao || null,
+    percepcao: percepcao || null
 };
 
-  if (!execucaoInsert.treinoId || !execucaoInsert.exercicioId) throw new Error("Missing fields.");
+  if (!execucaoInsert.diarioId || !execucaoInsert.exercicioId) throw new Error("Missing fields.");
   
   if(!(await prisma.treino.findUnique({
-    where: { id: execucaoInsert.treinoId, usuarioId: userId },
+    where: { id: execucaoInsert.diarioId, usuarioId: userId },
     select: { id: true }
   }))) throw new Error("Treino não encontrado.");
   
-    const execucaoDB = await prisma.execucaoPlano.create({
+    const execucaoDB = await prisma.execucaoReal.create({
       data: { reps: execucaoInsert.reps ,             
         sets : execucaoInsert.sets,             
         carga: execucaoInsert.carga,             
-        tempo: execucaoInsert.tempo,             
-        ordem: execucaoInsert.ordem,             
+        tempo: execucaoInsert.tempo,
+        percepcao,             
         comentarioExecucao,
-        treino: { connect: { id: execucaoInsert.treinoId } },
+        diario: { connect: { id: execucaoInsert.diarioId } },
         exercicio: { connect: { id: execucaoInsert.exercicioId } },
        },
     });
@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(
       {
         success: true,
-        message: "Execucao para exercicio criado com sucesso.",
+        message: "Execucao para exercicio criada com sucesso.",
         data: { id: execucaoDB.id }
       },
       { status: 201 }

@@ -52,16 +52,16 @@ model Treino {
 }
 
 model LinhasDiario {
-  id        Int      @id @default(autoincrement())
-  data      DateTime
-  peso      Decimal
-  execucoes ExecucaoReal[]
-  usuario   Usuario  @relation(fields: [usuarioId], references: [id])
-  usuarioId String
-  treino    Treino   @relation(fields: [treinoId], references: [id])
-  treinoId  Int
-  updatedAt DateTime @updatedAt
-  createdAt DateTime @default(now())
+  id             Int      @id @default(autoincrement())
+  data           DateTime
+  pesoCorporal   Decimal?
+  execucoes      ExecucaoReal[]
+  usuario        Usuario  @relation(fields: [usuarioId], references: [id])
+  usuarioId      String
+  treino         Treino?   @relation(fields: [treinoId], references: [id])
+  treinoId       Int?
+  updatedAt      DateTime @updatedAt
+  createdAt      DateTime @default(now())
 }
 
 model ExecucaoPlano {
