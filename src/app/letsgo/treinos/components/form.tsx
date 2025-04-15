@@ -82,7 +82,7 @@ const FormTreino = ({ onSuccess }: any) => {
     },
   })
 
-  const { register, handleSubmit, setValue, reset, watch,getValues } = useForm<IForm>({
+  const { register, handleSubmit, setValue, reset, watch,getValues, formState: { errors }  } = useForm<IForm>({
     defaultValues: {
       corCalendario: "#00FFFF"
     }
@@ -321,6 +321,7 @@ const FormTreino = ({ onSuccess }: any) => {
       if (shouldClose) {
         resetAddExecucaoForm()
         setIsAddExecucaoOpen(false)
+        router.push(`?editar-treino=open&treino=${treinoId}`)
       } else {
         setAddExecucaoForm(prev => ({
           ...prev,
@@ -408,16 +409,24 @@ const FormTreino = ({ onSuccess }: any) => {
           {/* Nome Field */}
           <div>
             <label htmlFor="nome" className="block text-sm font-medium text-gray-700 mb-1">
-              Nome do Treino
+              Nome do Treino *
             </label>
             <input
-              {...register("nome")}
+              {...register("nome", { 
+                required: "O nome do treino é obrigatório" 
+              })}
               id="nome"
               type="text"
               placeholder="Treino A"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                errors.nome ? "border-red-500" : "border-gray-300"
+              }`}
             />
-          </div>
+
+            {errors.nome && (
+                <p className="mt-1 text-sm text-red-600">{errors.nome.message}</p>
+              )}
+            </div>
 
           <div>
             <label htmlFor="coment" className="block text-sm font-medium text-gray-700 mb-1">
@@ -584,7 +593,7 @@ const FormTreino = ({ onSuccess }: any) => {
             <div className="space-y-4">
               {/* Seletor de Exercício */}
               <div className="relative">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Exercício</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Exercício*</label>
               <input
                 type="text"
                 placeholder="Buscar exercício..."
@@ -640,6 +649,7 @@ const FormTreino = ({ onSuccess }: any) => {
                   <input
                     type="number"
                     min="1"
+                    max="999"
                     step="1"
                     value={addExecucaoForm.reps}
                     onChange={(e) => setAddExecucaoForm(prev => ({ ...prev, reps: e.target.value }))}
@@ -652,6 +662,7 @@ const FormTreino = ({ onSuccess }: any) => {
                   <input
                     type="number"
                     min="1"
+                    max="999"
                     step="1"
                     value={addExecucaoForm.sets}
                     onChange={(e) => setAddExecucaoForm(prev => ({ ...prev, sets: e.target.value }))}
@@ -664,6 +675,7 @@ const FormTreino = ({ onSuccess }: any) => {
                   <input
                     type="number"
                     min="0"
+                    max="9999.99"
                     step="0.10"
                     value={addExecucaoForm.carga}
                     onChange={(e) => setAddExecucaoForm(prev => ({ ...prev, carga: e.target.value }))}
@@ -680,7 +692,7 @@ const FormTreino = ({ onSuccess }: any) => {
                   <input
                     type="number"
                     min="0"
-                    max="120"
+                    max="360"
                     value={addExecucaoForm.minutos ?? ''}
                     onChange={(e) => {
                       const value = e.target.value;

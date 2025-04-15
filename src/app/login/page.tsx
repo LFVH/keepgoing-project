@@ -8,7 +8,7 @@ export default function Page() {
 
   // Função para tratar o sucesso do login
   const handleLoginSuccess = () => {
-    router.push('/letsgo/treinos');
+    router.push('/letsgo/diario');
   };
 
   return (

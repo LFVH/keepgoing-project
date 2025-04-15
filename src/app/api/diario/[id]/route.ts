@@ -11,17 +11,17 @@ export async function DELETE(
     const userId = await verifyUser(req);
     if (userId instanceof NextResponse) return userId; 
 
-    await prisma.treino.delete({
+    await prisma.linhasDiario.delete({
       where: { id,
         usuarioId: userId,
        },
     });
 
-    return NextResponse.json({ message: "Treino excluído com sucesso" });
+    return NextResponse.json({ message: "Registro excluído com sucesso" });
   } catch (error) {
     console.log(error);
     return NextResponse.json(
-      { message: "Erro ao excluir a treino" },
+      { message: "Erro ao excluir" },
       { status: 500 }
     );
   }
@@ -42,7 +42,7 @@ export async function GET(
       return NextResponse.json({ message: "ID inválido" }, { status: 400 });
     }
 
-    const treino = await prisma.treino.findUnique({
+    const linha = await prisma.linhasDiario.findUnique({
       where: { id, usuarioId: userId },
       include: {
         execucoes: {
@@ -55,17 +55,18 @@ export async function GET(
             },
           },
         },
+        treino: true,
       },
     });
 
-    if (!treino) {
-      return NextResponse.json({ message: "Treino não encontrado" }, { status: 404 });
+    if (!linha) {
+      return NextResponse.json({ message: "Registro não encontrado" }, { status: 404 });
     }
 
-    return NextResponse.json({ message: "Treino obtido", treino });
+    return NextResponse.json({ message: "Registro obtido", linha });
   } catch (error) {
     console.error(error);
-    return NextResponse.json({ message: "Erro ao obter treino" }, { status: 500 });
+    return NextResponse.json({ message: "Erro ao obter registro" }, { status: 500 });
   }
 }
 
@@ -76,21 +77,21 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     const id = parseInt((await  params).id, 10);
     
     if (userId instanceof NextResponse) return userId; 
-    if (!requestData.nome) return NextResponse.json({ message: "O campo 'nome' é obrigatório" }, { status: 400 });
+    if (!requestData.data) return NextResponse.json({ message: "O campo 'data' é obrigatório" }, { status: 400 });
     if (isNaN(id)) return NextResponse.json({ message: "ID inválido" }, { status: 400 });
     
     const { 
-      nome,
-      comentarioGeral,
-      corCalendario,
+      data,
+      pesoCorporal,
+      treinoId,
       } = requestData;
 
-    const treinoDB = await prisma.treino.update({
+    const linhaDiarioDB = await prisma.linhasDiario.update({
       where: { id, usuarioId: userId },
       data: {
-        nome,
-        comentarioGeral,
-        corCalendario,
+        data: new Date(data),
+        pesoCorporal: pesoCorporal !== undefined ? isNaN(parseFloat(pesoCorporal)) ? null : parseFloat(pesoCorporal) : null,
+        treino: { connect: { id: parseInt(treinoId) } },
       },
       
     });
@@ -98,13 +99,13 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     return NextResponse.json(
       {
         success: true,
-        message: "Treino atualizado com sucesso.",
-        data: { id: treinoDB.id }
+        message: "Registro atualizado com sucesso.",
+        data: { id: linhaDiarioDB.id }
       },
       { status: 201 }
     );
   } catch (error) {
-    console.error("Erro ao atualizar treino:", error);
+    console.error("Erro ao atualizar registro:", error);
     return NextResponse.json(
       { success: false,  message: "Houve um erro no servidor" },
       { status: 500 }

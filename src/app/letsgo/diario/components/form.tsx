@@ -5,18 +5,24 @@ import { toast } from "react-toastify"
 import { useForm } from "react-hook-form"
 import { useQuery } from "@tanstack/react-query"
 import { useRouter, useSearchParams } from "next/navigation"
-import { ColorPicker } from "@/components/ui/colorpicker"
+import { unstable_cacheLife } from "next/cache"
 
 export interface IForm {
   id?: string,
-  nome: string,
-  coment: string,
-  corCalendario: string,
+  treinoId: number | null,
+  coment: string | null,
+  peso: number | null,
+  data: Date | null,
 }
 interface ExercicioOption {
   id: number
   nome: string
 }
+interface TreinoOption {
+  id: number
+  nome: string
+}
+
 
 interface AddExecucaoForm {
   exercicioId: number | null
@@ -42,23 +48,27 @@ interface Execucao {
   comentarioExecucao?: string
 }
 
-interface TreinoComExecucoes {
+interface LinhaComExecucoes {
+  comentarioGeral: string
   id: number,
-  nome: string,
-  comentarioGeral?: string,
-  corCalendario?: string,
+  data: Date,
+  pesoCorporal: number,
+  treinoId: number,
   execucoes: Execucao[]
 }
 
-const FormTreino = ({ onSuccess }: any) => {
+const FormDiario = ({ onSuccess }: any) => {
   const router = useRouter();
   const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout>()
   const [isSearching, setIsSearching] = useState(false)
   const [isEditing, setIsEditing] = useState(false);
   const [isAddExecucaoOpen, setIsAddExecucaoOpen] = useState(false)
   const [exerciciosOptions, setExerciciosOptions] = useState<ExercicioOption[]>([])
+  const [treinosOptions, setTreinosOptions] = useState<ExercicioOption[]>([])
   const [searchTerm, setSearchTerm] = useState('')
+  const [searchTreinoTerm, setSearchTreinoTerm] = useState('')
   const [selectedExercicio, setSelectedExercicio] = useState<ExercicioOption | null>(null);
+  const [selectedTreino, setSelectedTreino] = useState<TreinoOption | null>(null);
   const [addExecucaoForm, setAddExecucaoForm] = useState<AddExecucaoForm>({
     exercicioId: null,
     reps: '',
@@ -70,66 +80,70 @@ const FormTreino = ({ onSuccess }: any) => {
     tempo: null, 
   })
   const searchParams = useSearchParams()
-  const treinoId = searchParams.get("registro")
-  const { data: treino, isSuccess, isLoading, refetch } = useQuery<TreinoComExecucoes>({
+  const registroId = searchParams.get("registro")
+  const { data: linha, isSuccess, isLoading, refetch } = useQuery<LinhaComExecucoes>({
     refetchOnWindowFocus: false,
-    queryKey: ['treino', treinoId],
-    enabled: !!treinoId,
+    queryKey: ['diario', registroId],
+    enabled: !!registroId,
     queryFn: async () => {
-      const response = await fetch(`/api/treino/${treinoId}`, { method: "GET" });
+      const response = await fetch(`/api/diario/${registroId}`, { method: "GET" });
       const data = await response.json();
-      return data.treino || null;
+      return data.linha || null;
     },
   })
 
-  const { register, handleSubmit, setValue, reset, watch,getValues } = useForm<IForm>({
+  const { register, handleSubmit, setValue, reset, getValues,formState: { errors },watch  } = useForm<IForm>({
     defaultValues: {
-      corCalendario: "#00FFFF"
+      data: new Date() 
     }
   });
-  const nome = watch("nome")
 
+  const currentTreinoId = watch("treinoId");
+  const currentData = watch("data");
 
   useEffect(() => {
     const setDataValues = () => {
-      if (isSuccess && treino) {
+      if (isSuccess && linha) {
         setIsEditing(true);
         reset({
-          id: treino?.id.toString(),
-          nome: treino?.nome || "",
-          coment: treino?.comentarioGeral || "",
-          corCalendario: treino?.corCalendario || "",
+          id: linha?.id.toString(),
+          data: new Date(linha?.data || ""),
+          coment: linha?.comentarioGeral || "",
+          peso: linha?.pesoCorporal || undefined,
+          treinoId: linha?.treinoId || null,
         })
       }
     }
     setDataValues()
-  }, [treino, isSuccess, reset, setValue]);
+  }, [linha, isSuccess, reset, setValue]);
 
-  async function handleTreino(
+  async function handleLinha(
     id: string | null,
-    nome: string,
-    comment: string,
-    corCalendario: string,
+    data: Date | null,
+    comment: string | undefined,
+    peso: number | null,
+    treinoId: number | null,
   ) {
     try {
-      const treino = {
-        nome,
+      const diario = {
+        data,
         comentarioGeral: comment,
-        corCalendario: corCalendario,
+        pesoCorporal: peso,
+        treinoId,
       };
 
-      const response = id ? await fetch(`/api/treino/${id}`, {
+      const response = id ? await fetch(`/api/diario/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(treino),
-      }) : await fetch(`/api/treino`, {
+        body: JSON.stringify(diario),
+      }) : await fetch(`/api/diario`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(treino),
+        body: JSON.stringify(diario),
       });
       
       if (!response.ok) {
@@ -149,13 +163,13 @@ const FormTreino = ({ onSuccess }: any) => {
 
   const handleRemoveExecucao = async (execucaoId: number) => {
     try {
-      const response = await fetch(`/api/execucaoplanejada/${execucaoId}`, {
+      const response = await fetch(`/api/execucaoreal/${execucaoId}`, {
         method: "DELETE",
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          treinoId,
+          diarioId: registroId,
         }),
 
       });
@@ -172,6 +186,26 @@ const FormTreino = ({ onSuccess }: any) => {
       console.error(error);
     }
   };
+  
+  const fetchTreinos = async (term = '', treino?: TreinoOption) => {
+    try {
+      if(treino){
+        setSelectedTreino(treino);
+        setValue("treinoId", treino.id);
+
+        setSearchTreinoTerm(term)
+      } else if (term.length >= 2){
+        setIsSearching(true)
+        const response = await fetch(`/api/treinos?search=${term}`)
+        const data = await response.json()
+        setTreinosOptions(data.treinos)
+      }
+    } catch (error) {
+      console.error("Erro ao buscar treinos: ", error)
+    } finally {
+      setIsSearching(false)
+    }
+  }
 
   const fetchExercicios = async (term = '', exercicio?: ExercicioOption) => {
     try {
@@ -194,23 +228,21 @@ const FormTreino = ({ onSuccess }: any) => {
   }
 
   const handleOpenAddExecucao = async (exercicio?: ExercicioOption) => {
-    if (!treinoId) {
-      const originalOnSuccess = onSuccess;
-      let shouldOpenDialog = false;
+    if (!registroId) {
 
       onSuccess = () => {
-        console.log("faço nada fi");
+        console.log("Continue");
       };
       try {
       const formData = getValues(); 
-      const submitTreinoResponse = await onSubmit(formData); 
+      const submitLinhaDiarioResponse = await onSubmit(formData); 
 
-      console.log(submitTreinoResponse)
-      if (!submitTreinoResponse.data.id) {
+      console.log(submitLinhaDiarioResponse)
+      if (!submitLinhaDiarioResponse.data.id) {
        console.log("fail");
         return;
       } else{
-        await router.push(`?editar-diario=open&registro=${submitTreinoResponse.data.id}&fastaddexec=true`, {
+        await router.push(`?editar-diario=open&registro=${submitLinhaDiarioResponse.data.id}&fastaddexec=true`, {
           scroll: false 
         });
       }
@@ -227,7 +259,7 @@ const FormTreino = ({ onSuccess }: any) => {
   }
 
   const handleCloseAddExecucao = () => {
-    router.push(`?editar-treino=open&treino=${treinoId}`)
+    router.push(`?editar-treino=open&treino=${registroId}`)
     if (addExecucaoForm.exercicioId || addExecucaoForm.reps || addExecucaoForm.sets || addExecucaoForm.carga) {
       if (confirm('Você tem alterações não salvas. Deseja realmente fechar?')) {
         resetAddExecucaoForm()
@@ -251,6 +283,23 @@ const FormTreino = ({ onSuccess }: any) => {
     })
     setSearchTerm('')
     setSelectedExercicio(null);
+  }
+  
+  const handleSearchTreinos = async (term: string) => {
+    setSearchTreinoTerm(term)
+  
+    // Cancela o timeout anterior
+    if (searchTimeout) clearTimeout(searchTimeout)
+    
+    // Só pesquisa após 300ms do último caractere digitado
+    if (term.length >= 2) {
+      const timeout = setTimeout(() => {
+        fetchTreinos(term)
+      }, 300)
+      setSearchTimeout(timeout)
+    } else {
+      setTreinosOptions([])
+    }
   }
 
   const handleSearchExercicios = async (term: string) => {
@@ -299,7 +348,7 @@ const FormTreino = ({ onSuccess }: any) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          treinoId,
+          treinoId: registroId,
           exercicioId: addExecucaoForm.exercicioId,
           reps: reps,
           sets: sets,
@@ -337,29 +386,32 @@ const FormTreino = ({ onSuccess }: any) => {
   }
 
   const onSubmit = async (data: IForm) => {
-    const nome = data.nome.trim();
-    const comment = data.coment.trim();
-    const corCalendario = data.corCalendario.trim();
+    const dataLinha = data.data;
+    const comment = data?.coment?.trim();
+    const peso = data.peso;
+    const treinoId = data.treinoId;
 
-    if (!nome) {
-      toast.error("O nome é obrigatório");
+    if (!dataLinha) {
+      toast.error("Data é obrigatório");
     }
     if (
       isEditing &&
-      nome === treino?.nome &&
-      comment === treino?.comentarioGeral &&
-      corCalendario === treino?.corCalendario
+      dataLinha === linha?.data &&
+      comment === linha?.comentarioGeral &&
+      peso === linha?.pesoCorporal &&
+      treinoId === linha?.treinoId
     ) {
       toast.info("Nenhuma alteração detectada.");
       return;
     }
     try{
       const treinoSalvo = await toast.promise(
-      handleTreino(
+      handleLinha(
         isEditing ? data?.id ?? null : null,
-        nome,
+        dataLinha,
         comment,
-        corCalendario,
+        peso,
+        treinoId,
       ),
       {
         error: {
@@ -371,7 +423,7 @@ const FormTreino = ({ onSuccess }: any) => {
         success: {
           render({ data }): any {
             onSuccess();
-            return data.message || (isEditing ? "Atualização finalizada com sucesso" : "Treino criado com sucesso");
+            return data.message || (isEditing ? "Atualização finalizada com sucesso" : "Registro criado com sucesso");
           },
         },
       }
@@ -385,7 +437,7 @@ const FormTreino = ({ onSuccess }: any) => {
   const execucoesPorExercicio = (() => {
     const agrupado: Record<number, { exercicio: { id: number, nome: string }, execucoes: Execucao[] }> = {};
   
-    treino?.execucoes?.forEach((execucao) => {
+    linha?.execucoes?.forEach((execucao) => {
       const exercicioId = execucao.exercicio.id;
   
       if (!agrupado[exercicioId]) {
@@ -401,59 +453,130 @@ const FormTreino = ({ onSuccess }: any) => {
     return Object.values(agrupado);
   })();  
 
+  const isValidDate = currentData instanceof Date && !isNaN(currentData.getTime());
   return (
     <div className="max-w-2xl mx-auto p-4 bg-white rounded-lg shadow-sm">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
         <div className="space-y-4">
-          {/* Nome Field */}
           <div>
-            <label htmlFor="nome" className="block text-sm font-medium text-gray-700 mb-1">
-              Nome do Treino
-            </label>
+            {/* Seletor de Treino */}
+            <div className="relative">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Treino*</label>
             <input
-              {...register("nome")}
-              id="nome"
               type="text"
-              placeholder="Treino A"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              placeholder="Buscar treinos..."
+              value={selectedTreino ? selectedTreino.nome : searchTreinoTerm}
+              onChange={(e) => {
+                // Se tiver um exercício selecionado e o usuário começar a digitar, limpa a seleção
+                if (selectedTreino && e.target.value !== selectedTreino.nome) {
+                  setSelectedTreino(null);
+                  setValue("treinoId", null);
+                }
+                handleSearchTreinos(e.target.value);
+              }}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md"
             />
-          </div>
 
-          <div>
-            <label htmlFor="coment" className="block text-sm font-medium text-gray-700 mb-1">
-              Comentários sobre o treino
-            </label>
-            <input
-              {...register("coment")}
-              id="comment"
-              type="text"
-              placeholder="Prestar atenção no movimento."
-              className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
+            {isSearching && <div className="text-sm text-gray-500">Buscando...</div>}
+            
+            {!selectedTreino && searchTreinoTerm && (
+                <div className="
+                absolute          // Posiciona sobre outros elementos
+                z-50              // Garante que fique acima de tudo
+                w-full           // Largura igual ao input
+                mt-1             // Espaço do input
+                max-h-40          // Altura máxima
+                overflow-y-auto  // Rolagem automática
+                bg-white          // Fundo branco
+                border           // Borda
+                rounded-md       // Cantos arredondados
+                shadow-lg        // Sombra para efeito de elevação
+              ">
+                  {treinosOptions.map(treino => (
+                    <div
+                      key={treino.id}
+                      className={`p-2 hover:bg-gray-100 cursor-pointer ${currentTreinoId  === treino.id ? 'bg-blue-100' : ''}`}
+                      onClick={() => {
+                        setSelectedTreino(treino);
+                        setValue("treinoId", treino.id);
+                        // Limpa a busca mantendo o item selecionado
+                        setSearchTreinoTerm('');
+                      }}  
+                    >
+                      {treino.nome}
+                    </div>
+                  ))}
+                </div>
+            )}
+            </div>
+            <div>
+              <label htmlFor="data" className="block text-sm font-medium text-gray-700 mb-1">
+                Data do Registro *
+              </label>
+              <input
+                {...register("data", {
+                  required: "A data é obrigatória",
+                  valueAsDate: true,
+                })}
+                id="data"
+                type="datetime-local"
+                defaultValue={new Date().toISOString().slice(0, 16)}
+                className={`w-full px-3 py-2 border rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                  errors.data ? "border-red-500" : "border-gray-300"
+                }`}
+              />
+            {errors.data && (
+              <p className="mt-1 text-sm text-red-600">{errors.data.message}</p>
+            )}
+            </div>
+            <div>
+              <label htmlFor="coment" className="block text-sm font-medium text-gray-700 mb-1">
+                Comentários sobre o treino
+              </label>
+              <input
+                {...register("coment")}
+                id="comment"
+                type="text"
+                placeholder="Prestar atenção no movimento."
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
+            <div>
+              <label htmlFor="peso" className="block text-sm font-medium text-gray-700 mb-1">
+              Peso Corporal (kg)
+              </label>
+              <input
+                {...register("peso", { valueAsNumber: true })}
+                id="peso"
+                type="number"
+                step="0.01"
+                min="0"
+                max="9999.99"
+                placeholder="Ex: 72.50"
+                className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+              <p className="mt-1 text-xs text-gray-500">Máximo: 9999.99 kg</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => handleOpenAddExecucao()}
+              className={`px-3 py-1 text-white rounded ${
+                currentTreinoId && currentData ? "bg-green-500 hover:bg-green-600" : "bg-gray-400 cursor-not-allowed"
+              }`}
+              disabled={!currentTreinoId || !currentData || !isValidDate}
+            >
+              Adicionar Exercício
+            </button>
+            {(!currentTreinoId || !currentData) && (
+              <span className="text-red-500 text-sm">
+                {!currentTreinoId && !currentData
+                  ? "Selecione um treino e uma data"
+                  : !currentTreinoId
+                  ? "Selecione um treino"
+                  : "Selecione uma data"}
+              </span>
+            )}
           </div>
-
-          <div>
-          <ColorPicker
-            name="corCalendario"
-            register={register}
-            setValue={setValue}
-            watch={watch}
-          />
-          </div>
-          
-          <button
-            type="button"
-            onClick={() => handleOpenAddExecucao()}
-            className={`px-3 py-1 text-white rounded ${
-              nome?.trim() ? "bg-green-500 hover:bg-green-600" : "bg-gray-400 cursor-not-allowed"
-            }`}
-            disabled={!nome?.trim()}
-          >
-            Adicionar Exercício
-          </button>
-          {!nome?.trim() && (
-            <span className="text-red-500 text-sm">Dê um nome ao treino</span>
-          )} 
         </div>
         {execucoesPorExercicio && (
           <div className="space-y-6">
@@ -640,6 +763,7 @@ const FormTreino = ({ onSuccess }: any) => {
                   <input
                     type="number"
                     min="1"
+                    max="999"
                     step="1"
                     value={addExecucaoForm.reps}
                     onChange={(e) => setAddExecucaoForm(prev => ({ ...prev, reps: e.target.value }))}
@@ -652,6 +776,7 @@ const FormTreino = ({ onSuccess }: any) => {
                   <input
                     type="number"
                     min="1"
+                    max="999"
                     step="1"
                     value={addExecucaoForm.sets}
                     onChange={(e) => setAddExecucaoForm(prev => ({ ...prev, sets: e.target.value }))}
@@ -664,6 +789,7 @@ const FormTreino = ({ onSuccess }: any) => {
                   <input
                     type="number"
                     min="0"
+                    max="9999.99"
                     step="0.10"
                     value={addExecucaoForm.carga}
                     onChange={(e) => setAddExecucaoForm(prev => ({ ...prev, carga: e.target.value }))}
@@ -680,7 +806,7 @@ const FormTreino = ({ onSuccess }: any) => {
                   <input
                     type="number"
                     min="0"
-                    max="120"
+                    max="360"
                     value={addExecucaoForm.minutos ?? ''}
                     onChange={(e) => {
                       const value = e.target.value;
@@ -776,4 +902,4 @@ const FormTreino = ({ onSuccess }: any) => {
   )
 }
 
-export default FormTreino
+export default FormDiario

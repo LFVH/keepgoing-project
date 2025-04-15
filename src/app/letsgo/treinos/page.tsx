@@ -79,6 +79,13 @@ const Treinos = () => {
   return (
     
     <div className="p-4 max-w-4xl mx-auto">
+      <Button 
+        title="Voltar ao início" 
+        onClick={() => router.push("/letsgo")}
+        className="bg-gray-500 hover:bg-black-600 text-white px-4 py-2 rounded"
+      >
+        Voltar ao início
+      </Button>
   <div className="mb-4">
     {isCreateTreinoModalOpen || editEventModal ? (
       <Button 
@@ -89,6 +96,7 @@ const Treinos = () => {
         Voltar
       </Button>
     ) : (
+      
       <Button
         title="Adicionar"
         onClick={() => router.push("?criar-treino=open")}
@@ -133,7 +141,7 @@ const Treinos = () => {
                     {/* Comentário geral truncado */}
                     <div className="flex-grow pr-4">
                       {treino?.comentarioGeral && (
-                        <p className="text-gray-600 text-sm">
+                        <p title={treino.comentarioGeral} className="text-gray-600 text-sm">
                           {treino.comentarioGeral.length > 60 
                             ? `${treino.comentarioGeral.substring(0, 60)}...` 
                             : treino.comentarioGeral}

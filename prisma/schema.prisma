@@ -15,6 +15,9 @@ model Usuario {
   linhasDiario LinhasDiario[]
   refreshToken RefreshToken?
   treinos      Treino[]
+  premium      Boolean?
+  dtIniPremium DateTime?
+  dtFimPremium DateTime?
   updatedAt    DateTime @updatedAt
   createdAt    DateTime @default(now())
 }
@@ -52,23 +55,24 @@ model Treino {
 }
 
 model LinhasDiario {
-  id             Int      @id @default(autoincrement())
-  data           DateTime
-  pesoCorporal   Decimal?
-  execucoes      ExecucaoReal[]
-  usuario        Usuario  @relation(fields: [usuarioId], references: [id])
-  usuarioId      String
-  treino         Treino?   @relation(fields: [treinoId], references: [id])
-  treinoId       Int?
-  updatedAt      DateTime @updatedAt
-  createdAt      DateTime @default(now())
+  id               Int      @id @default(autoincrement())
+  data             DateTime
+  pesoCorporal     Decimal? @db.Decimal(6, 2)
+  comentarioGeral  String?
+  execucoes        ExecucaoReal[]
+  usuario          Usuario  @relation(fields: [usuarioId], references: [id])
+  usuarioId        String
+  treino           Treino?   @relation(fields: [treinoId], references: [id])
+  treinoId         Int?
+  updatedAt        DateTime @updatedAt
+  createdAt        DateTime @default(now())
 }
 
 model ExecucaoPlano {
   id                 Int      @id @default(autoincrement())
   reps               Int?
   sets               Int?
-  carga              Decimal?
+  carga              Decimal? @db.Decimal(6, 2)
   tempo              Int?
   ordem              Int?
   comentarioExecucao String?
@@ -84,7 +88,7 @@ model ExecucaoReal {
   id                  Int      @id @default(autoincrement())
   reps                Int?
   sets                Int?
-  carga               Decimal?
+  carga               Decimal? @db.Decimal(6, 2)
   tempo               Int?
   comentarioExecucao  String?
   percepcao           String?
