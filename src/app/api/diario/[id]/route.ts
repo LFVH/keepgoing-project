@@ -84,6 +84,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       data,
       pesoCorporal,
       treinoId,
+      comentarioGeral,
       } = requestData;
 
     const linhaDiarioDB = await prisma.linhasDiario.update({
@@ -91,6 +92,7 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       data: {
         data: new Date(data),
         pesoCorporal: pesoCorporal !== undefined ? isNaN(parseFloat(pesoCorporal)) ? null : parseFloat(pesoCorporal) : null,
+        comentarioGeral,
         treino: { connect: { id: parseInt(treinoId) } },
       },
       

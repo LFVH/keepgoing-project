@@ -10,9 +10,9 @@ import { unstable_cacheLife } from "next/cache"
 export interface IForm {
   id?: string,
   treinoId: number | null,
-  coment: string | null,
+  comment: string | null,
   peso: number | null,
-  data: Date | null,
+  data: string | null,
 }
 interface ExercicioOption {
   id: number
@@ -41,6 +41,8 @@ interface Execucao {
   reps: number,
   sets: number,
   carga: number,
+  tempo: number,
+  percepcao: string,
   exercicio: {
     id: number,
     nome: string
@@ -53,7 +55,10 @@ interface LinhaComExecucoes {
   id: number,
   data: Date,
   pesoCorporal: number,
-  treinoId: number,
+  treino: {
+    id: number,
+    nome: string
+  },
   execucoes: Execucao[]
 }
 
@@ -62,7 +67,8 @@ const FormDiario = ({ onSuccess }: any) => {
   const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout>()
   const [isSearching, setIsSearching] = useState(false)
   const [isEditing, setIsEditing] = useState(false);
-  const [isAddExecucaoOpen, setIsAddExecucaoOpen] = useState(false)
+  const [isAddExecucaoOpen, setIsAddExecucaoOpen] = useState(false) ;
+  const [exerciciosVazios, setExerciciosVazios] = useState<number[]>([]);
   const [exerciciosOptions, setExerciciosOptions] = useState<ExercicioOption[]>([])
   const [treinosOptions, setTreinosOptions] = useState<ExercicioOption[]>([])
   const [searchTerm, setSearchTerm] = useState('')
@@ -94,7 +100,7 @@ const FormDiario = ({ onSuccess }: any) => {
 
   const { register, handleSubmit, setValue, reset, getValues,formState: { errors },watch  } = useForm<IForm>({
     defaultValues: {
-      data: new Date() 
+      data: new Date().toISOString().slice(0, 16) 
     }
   });
 
@@ -105,13 +111,18 @@ const FormDiario = ({ onSuccess }: any) => {
     const setDataValues = () => {
       if (isSuccess && linha) {
         setIsEditing(true);
+        const rawDate = linha?.data || "";
+        const formattedDate = rawDate 
+          ? new Date(rawDate).toISOString().slice(0, 16)
+          : "";
         reset({
           id: linha?.id.toString(),
-          data: new Date(linha?.data || ""),
-          coment: linha?.comentarioGeral || "",
+          data: formattedDate,
+          comment: linha?.comentarioGeral || "",
           peso: linha?.pesoCorporal || undefined,
-          treinoId: linha?.treinoId || null,
+          treinoId: linha?.treino.id || null,
         })
+        setSelectedTreino({id: linha.treino.id, nome: linha.treino.nome});
       }
     }
     setDataValues()
@@ -119,7 +130,7 @@ const FormDiario = ({ onSuccess }: any) => {
 
   async function handleLinha(
     id: string | null,
-    data: Date | null,
+    data: string | null,
     comment: string | undefined,
     peso: number | null,
     treinoId: number | null,
@@ -131,7 +142,7 @@ const FormDiario = ({ onSuccess }: any) => {
         pesoCorporal: peso,
         treinoId,
       };
-
+      console.log(diario);
       const response = id ? await fetch(`/api/diario/${id}`, {
         method: "PUT",
         headers: {
@@ -197,8 +208,8 @@ const FormDiario = ({ onSuccess }: any) => {
       } else if (term.length >= 2){
         setIsSearching(true)
         const response = await fetch(`/api/treinos?search=${term}`)
-        const data = await response.json()
-        setTreinosOptions(data.treinos)
+        const responseData = await response.json()
+        setTreinosOptions(responseData.treinos)
       }
     } catch (error) {
       console.error("Erro ao buscar treinos: ", error)
@@ -217,8 +228,8 @@ const FormDiario = ({ onSuccess }: any) => {
       } else if (term.length >= 2){
         setIsSearching(true)
         const response = await fetch(`/api/exercicios?search=${term}`)
-        const data = await response.json()
-        setExerciciosOptions(data.exercicios)
+        const responseData = await response.json()
+        setExerciciosOptions(responseData.exercicios)
       }
     } catch (error) {
       console.error("Erro ao buscar exercícios: ", error)
@@ -229,30 +240,25 @@ const FormDiario = ({ onSuccess }: any) => {
 
   const handleOpenAddExecucao = async (exercicio?: ExercicioOption) => {
     if (!registroId) {
-
-      onSuccess = () => {
-        console.log("Continue");
-      };
       try {
-      const formData = getValues(); 
-      const submitLinhaDiarioResponse = await onSubmit(formData); 
-
-      console.log(submitLinhaDiarioResponse)
-      if (!submitLinhaDiarioResponse.data.id) {
-       console.log("fail");
-        return;
-      } else{
-        await router.push(`?editar-diario=open&registro=${submitLinhaDiarioResponse.data.id}&fastaddexec=true`, {
-          scroll: false 
-        });
+        const response = await submitLinha(getValues());
+    
+        if (!response || !response.data?.id) {
+          console.log("Falha ao salvar o registro");
+          return;
+        }
+    
+        await router.push(
+          `?editar-diario=open&registro=${response.data.id}&fastaddexec=true`,
+          { scroll: false }
+        );
+      } catch (error) {
+        console.log("Erro durante o submit:", error);
+      } finally {
+        console.log("Finalizado o processo de submitLinha");
       }
-    }
-    catch(error) {
-      console.log(error);
-    } finally{
-      console.log("finally")
-    }
-    return;
+    
+      return;
     }
     await fetchExercicios('',exercicio)
     setIsAddExecucaoOpen(true)
@@ -331,7 +337,7 @@ const FormDiario = ({ onSuccess }: any) => {
     if (!addExecucaoForm.exercicioId) {
       toast.error('Selecione um exercício')
       return
-    }
+    }""
 
     const {
       reps = parseInt(addExecucaoForm.reps ? addExecucaoForm.reps : ''),
@@ -342,19 +348,20 @@ const FormDiario = ({ onSuccess }: any) => {
     } = addExecucaoForm;
 
     try {
-      const response = await fetch('/api/execucaoplanejada', {
+      const response = await fetch('/api/execucaoreal', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          treinoId: registroId,
+          diarioId: registroId,
           exercicioId: addExecucaoForm.exercicioId,
           reps: reps,
           sets: sets,
           carga: carga,
           comentarioExecucao: comentarioExec,
           tempo: tempo,
+          isEmpty: (exerciciosVazios.includes(addExecucaoForm.exercicioId))
           //ordem: nrOrdem,
         }),
       })
@@ -386,74 +393,97 @@ const FormDiario = ({ onSuccess }: any) => {
   }
 
   const onSubmit = async (data: IForm) => {
+    const result = await submitLinha(data);
+    if (result) {
+      onSuccess();
+    }
+  };
+
+  const submitLinha = async (data: IForm) => {
     const dataLinha = data.data;
-    const comment = data?.coment?.trim();
+    const comment = data?.comment?.trim();
     const peso = data.peso;
     const treinoId = data.treinoId;
-
+  
     if (!dataLinha) {
       toast.error("Data é obrigatório");
+      return;
     }
+  
     if (
       isEditing &&
-      dataLinha === linha?.data &&
+      dataLinha === new Date(linha?.data ? linha?.data : "").toISOString().slice(0, 16) &&
       comment === linha?.comentarioGeral &&
       peso === linha?.pesoCorporal &&
-      treinoId === linha?.treinoId
+      treinoId === linha?.treino.id
     ) {
       toast.info("Nenhuma alteração detectada.");
       return;
     }
-    try{
+  
+    try {
       const treinoSalvo = await toast.promise(
-      handleLinha(
-        isEditing ? data?.id ?? null : null,
-        dataLinha,
-        comment,
-        peso,
-        treinoId,
-      ),
-      {
-        error: {
-          render({ data }: any) {
-            return data.message || "Erro ao salvar dados";
+        handleLinha(
+          isEditing ? data?.id ?? null : null,
+          dataLinha,
+          comment,
+          peso,
+          treinoId,
+        ),
+        {
+          error: {
+            render({ data }: any) {
+              return data.message || "Erro ao salvar dados";
+            },
           },
-        },
-        pending: isEditing ? "Atualizando ..." : "Criando ...",
-        success: {
-          render({ data }): any {
-            onSuccess();
-            return data.message || (isEditing ? "Atualização finalizada com sucesso" : "Registro criado com sucesso");
+          pending: isEditing ? "Atualizando ..." : "Criando ...",
+          success: {
+            render({ data }): any {
+              return data.message || (isEditing ? "Atualização finalizada com sucesso" : "Registro criado com sucesso");
+            },
           },
-        },
-      }
-    );
-    return treinoSalvo;
-  }
-  catch(error){
-    toast.error("Erro ao submeter os dados.");
-  }
+        }
+      );
+      return treinoSalvo;
+    } catch (error) {
+      toast.error("Erro ao submeter os dados.");
+      return null;
+    }
   };
+
   const execucoesPorExercicio = (() => {
     const agrupado: Record<number, { exercicio: { id: number, nome: string }, execucoes: Execucao[] }> = {};
-  
+    const tempExerciciosVazios: number[] = []
     linha?.execucoes?.forEach((execucao) => {
+      // Verifica se todos os campos relevantes estão vazios/zero
+      const camposVazios = 
+        (!execucao.reps || execucao.reps === 0) &&
+        (!execucao.sets || execucao.sets === 0) &&
+        (!execucao.comentarioExecucao || execucao.comentarioExecucao.trim() === "") &&
+        (!execucao.tempo || execucao.tempo === 0) &&
+        (!execucao.percepcao || execucao.percepcao.trim() === "");
+  
+      // Se NÃO estiverem todos vazios (ou seja, se pelo menos um campo tem valor válido)
       const exercicioId = execucao.exercicio.id;
+      if (!camposVazios) {
   
-      if (!agrupado[exercicioId]) {
-        agrupado[exercicioId] = {
-          exercicio: execucao.exercicio,
-          execucoes: []
-        };
+        if (!agrupado[exercicioId]) {
+          agrupado[exercicioId] = {
+            exercicio: execucao.exercicio,
+            execucoes: []
+          };
+        }
+  
+        agrupado[exercicioId].execucoes.push(execucao);
+      } else{
+        tempExerciciosVazios.push(exercicioId);
       }
-  
-      agrupado[exercicioId].execucoes.push(execucao);
     });
-  
+    setExerciciosVazios(tempExerciciosVazios);
     return Object.values(agrupado);
-  })();  
+  })();
 
-  const isValidDate = currentData instanceof Date && !isNaN(currentData.getTime());
+  const isValidDate = !isNaN((new Date(currentData ? currentData : "")).getTime());
   return (
     <div className="max-w-2xl mx-auto p-4 bg-white rounded-lg shadow-sm">
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -496,12 +526,40 @@ const FormDiario = ({ onSuccess }: any) => {
                     <div
                       key={treino.id}
                       className={`p-2 hover:bg-gray-100 cursor-pointer ${currentTreinoId  === treino.id ? 'bg-blue-100' : ''}`}
-                      onClick={() => {
+                      onClick={async () => {
                         setSelectedTreino(treino);
                         setValue("treinoId", treino.id);
-                        // Limpa a busca mantendo o item selecionado
                         setSearchTreinoTerm('');
-                      }}  
+
+                        const formData = getValues(); 
+                        const diario= {
+                          dataLinha : formData.data,
+                          comment   : formData?.comment?.trim(),
+                          peso      : formData.peso,
+                          treinoId  : formData.treinoId,
+                        }
+                        try {
+                          const response = await fetch(`/api/migrarExecucao/${treino.id}`, {
+                            method: "POST",
+                            headers: {
+                              "Content-Type": "application/json",
+                            },
+                            body: JSON.stringify(diario), // Certifique-se que 'diario' está disponível aqui
+                          });
+                      
+                          if (!response.ok) {
+                            throw new Error('Erro ao migrar execução');
+                          }
+                          
+                          const data = await response.json();
+                          console.log('Migração realizada com sucesso:', data);
+                          // Adicione qualquer tratamento adicional aqui
+                        } catch (error) {
+                          console.error('Erro:', error);
+                          // Trate o erro conforme necessário
+                        }
+
+                      }}
                     >
                       {treino.nome}
                     </div>
@@ -530,11 +588,11 @@ const FormDiario = ({ onSuccess }: any) => {
             )}
             </div>
             <div>
-              <label htmlFor="coment" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="comment" className="block text-sm font-medium text-gray-700 mb-1">
                 Comentários sobre o treino
               </label>
               <input
-                {...register("coment")}
+                {...register("comment")}
                 id="comment"
                 type="text"
                 placeholder="Prestar atenção no movimento."
@@ -551,11 +609,10 @@ const FormDiario = ({ onSuccess }: any) => {
                 type="number"
                 step="0.01"
                 min="0"
-                max="9999.99"
+                max="999.99"
                 placeholder="Ex: 72.50"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
-              <p className="mt-1 text-xs text-gray-500">Máximo: 9999.99 kg</p>
             </div>
             <button
               type="button"
@@ -582,7 +639,7 @@ const FormDiario = ({ onSuccess }: any) => {
           <div className="space-y-6">
             <h3 className="text-lg font-medium text-gray-900">Exercícios do Treino</h3>
             {execucoesPorExercicio.map(({ exercicio, execucoes }) => {
-            const execucoesOrdenadas = [...execucoes].sort((a, b) => a.id - b.id);
+            const execucoesOrdenadas = (execucoes || []).sort((a, b) => a.id - b.id);
             return (
               
               <div key={exercicio.id} className="border rounded-lg p-4">
@@ -596,7 +653,7 @@ const FormDiario = ({ onSuccess }: any) => {
                     +
                   </button>
                 </div>
-
+                {execucoes && (
                 <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
@@ -656,6 +713,7 @@ const FormDiario = ({ onSuccess }: any) => {
                   </tbody>
                 </table>
                 </div>
+                )}
               </div>
             )})}
           </div>

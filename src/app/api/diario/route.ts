@@ -46,6 +46,7 @@ export async function POST(req: NextRequest) {
     const { 
             data,
             pesoCorporal,
+            comentarioGeral,
             treinoId,
       } = requestData;
   
@@ -53,6 +54,7 @@ export async function POST(req: NextRequest) {
       data: {
         data: new Date(data),
         pesoCorporal: pesoCorporal !== undefined ? isNaN(parseFloat(pesoCorporal)) ? null : parseFloat(pesoCorporal) : null,
+        comentarioGeral,
         usuario: { connect: { id: userId } },
         treino: { connect: { id: parseInt(treinoId) } },
       },

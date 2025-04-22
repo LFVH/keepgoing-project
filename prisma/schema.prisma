@@ -57,7 +57,7 @@ model Treino {
 model LinhasDiario {
   id               Int      @id @default(autoincrement())
   data             DateTime
-  pesoCorporal     Decimal? @db.Decimal(6, 2)
+  pesoCorporal     Decimal? @db.Decimal(5, 2)
   comentarioGeral  String?
   execucoes        ExecucaoReal[]
   usuario          Usuario  @relation(fields: [usuarioId], references: [id])
@@ -90,6 +90,7 @@ model ExecucaoReal {
   sets                Int?
   carga               Decimal? @db.Decimal(6, 2)
   tempo               Int?
+  ordem               Int?
   comentarioExecucao  String?
   percepcao           String?
   exercicio           Exercicio @relation(fields: [exercicioId], references: [id])

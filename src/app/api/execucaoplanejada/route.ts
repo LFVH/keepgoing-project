@@ -39,26 +39,27 @@ export async function POST(req: NextRequest) {
       carga,             
       tempo,             
       ordem,             
-      comentarioExecucao
-  } = requestData;
+      comentarioExecucao,
+      isEmpty
+    } = requestData;
   
-  const execucaoInsert = {
-    treinoId: isNaN(parseInt(treinoId)) ? null : parseInt(treinoId),
-    exercicioId: isNaN(parseInt(exercicioId)) ? null : parseInt(exercicioId),
-    reps: reps !== undefined ? (isNaN(parseInt(reps)) ? null : parseInt(reps)) : null,
-    sets: sets !== undefined ? (isNaN(parseInt(sets)) ? null : parseInt(sets)) : null,
-    carga: carga !== undefined ? (isNaN(parseFloat(carga)) ? null : parseFloat(carga)) : null,
-    tempo: tempo !== undefined ? (isNaN(parseInt(tempo)) ? null : parseInt(tempo)) : null,
-    ordem: ordem !== undefined ? (isNaN(parseInt(ordem)) ? null : parseInt(ordem)) : null,
-    comentarioExecucao: comentarioExecucao || null
-};
+    const execucaoInsert = {
+      treinoId: isNaN(parseInt(treinoId)) ? null : parseInt(treinoId),
+      exercicioId: isNaN(parseInt(exercicioId)) ? null : parseInt(exercicioId),
+      reps: reps !== undefined ? (isNaN(parseInt(reps)) ? null : parseInt(reps)) : null,
+      sets: sets !== undefined ? (isNaN(parseInt(sets)) ? null : parseInt(sets)) : null,
+      carga: carga !== undefined ? (isNaN(parseFloat(carga)) ? null : parseFloat(carga)) : null,
+      tempo: tempo !== undefined ? (isNaN(parseInt(tempo)) ? null : parseInt(tempo)) : null,
+      ordem: ordem !== undefined ? (isNaN(parseInt(ordem)) ? null : parseInt(ordem)) : null,
+      comentarioExecucao: comentarioExecucao || null
+    };
 
-  if (!execucaoInsert.treinoId || !execucaoInsert.exercicioId) throw new Error("Missing fields.");
-  
-  if(!(await prisma.treino.findUnique({
-    where: { id: execucaoInsert.treinoId, usuarioId: userId },
-    select: { id: true }
-  }))) throw new Error("Treino não encontrado.");
+    if (!execucaoInsert.treinoId || !execucaoInsert.exercicioId) throw new Error("Missing fields.");
+    
+    if(!(await prisma.treino.findUnique({
+      where: { id: execucaoInsert.treinoId, usuarioId: userId },
+      select: { id: true }
+    }))) throw new Error("Treino não encontrado.");
   
     const execucaoDB = await prisma.execucaoPlano.create({
       data: { reps: execucaoInsert.reps ,             
@@ -72,6 +73,26 @@ export async function POST(req: NextRequest) {
        },
     });
 
+    if (isEmpty === "true"){
+      console.log("deletar execucoes planejadas zeradas");
+      await prisma.execucaoPlano.deleteMany({
+        where: {
+          AND: [
+            { OR: [{ reps: 0 }, { reps: null }] },
+            { OR: [{ sets: 0 }, { sets: null }] },
+            { OR: [{ comentarioExecucao: "" }, { comentarioExecucao: null }] },
+            { OR: [{ tempo: 0 }, { tempo: null }] },
+            { exercicioId: exercicioId },
+            { 
+              treino: {
+                id: treinoId,
+                usuarioId: userId
+              }
+            }
+          ]
+        }
+      });
+    }
     return NextResponse.json(
       {
         success: true,

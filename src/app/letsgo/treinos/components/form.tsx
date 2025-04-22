@@ -35,6 +35,7 @@ interface Execucao {
   reps: number,
   sets: number,
   carga: number,
+  tempo: number,
   exercicio: {
     id: number,
     nome: string
@@ -53,7 +54,8 @@ interface TreinoComExecucoes {
 const FormTreino = ({ onSuccess }: any) => {
   const router = useRouter();
   const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout>()
-  const [isSearching, setIsSearching] = useState(false)
+  const [isSearching, setIsSearching] = useState(false);
+  const [exerciciosVazios, setExerciciosVazios] = useState<number[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [isAddExecucaoOpen, setIsAddExecucaoOpen] = useState(false)
   const [exerciciosOptions, setExerciciosOptions] = useState<ExercicioOption[]>([])
@@ -306,6 +308,7 @@ const FormTreino = ({ onSuccess }: any) => {
           carga: carga,
           comentarioExecucao: comentarioExec,
           tempo: tempo,
+          isEmpty: (exerciciosVazios.includes(addExecucaoForm.exercicioId))
           //ordem: nrOrdem,
         }),
       })
@@ -383,24 +386,38 @@ const FormTreino = ({ onSuccess }: any) => {
     toast.error("Erro ao submeter os dados.");
   }
   };
+ 
   const execucoesPorExercicio = (() => {
     const agrupado: Record<number, { exercicio: { id: number, nome: string }, execucoes: Execucao[] }> = {};
-  
+    const tempExerciciosVazios: number[] = []
     treino?.execucoes?.forEach((execucao) => {
+      // Verifica se todos os campos relevantes estão vazios/zero
+      const camposVazios = 
+        (!execucao.reps || execucao.reps === 0) &&
+        (!execucao.sets || execucao.sets === 0) &&
+        (!execucao.comentarioExecucao || execucao.comentarioExecucao.trim() === "") &&
+        (!execucao.tempo || execucao.tempo === 0)
+  
+      // Se NÃO estiverem todos vazios (ou seja, se pelo menos um campo tem valor válido)
       const exercicioId = execucao.exercicio.id;
+      if (!camposVazios) {
   
-      if (!agrupado[exercicioId]) {
-        agrupado[exercicioId] = {
-          exercicio: execucao.exercicio,
-          execucoes: []
-        };
+        if (!agrupado[exercicioId]) {
+          agrupado[exercicioId] = {
+            exercicio: execucao.exercicio,
+            execucoes: []
+          };
+        }
+  
+        agrupado[exercicioId].execucoes.push(execucao);
+      } else{
+        tempExerciciosVazios.push(exercicioId);
       }
-  
-      agrupado[exercicioId].execucoes.push(execucao);
     });
+    setExerciciosVazios(tempExerciciosVazios);
   
     return Object.values(agrupado);
-  })();  
+  })();
 
   return (
     <div className="max-w-2xl mx-auto p-4 bg-white rounded-lg shadow-sm">

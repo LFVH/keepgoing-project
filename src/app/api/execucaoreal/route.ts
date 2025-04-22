@@ -39,7 +39,8 @@ export async function POST(req: NextRequest) {
       carga,             
       tempo,             
       comentarioExecucao,
-      percepcao
+      percepcao,
+      isEmpty
   } = requestData;
   
   const execucaoInsert = {
@@ -54,7 +55,7 @@ export async function POST(req: NextRequest) {
 };
 
   if (!execucaoInsert.diarioId || !execucaoInsert.exercicioId) throw new Error("Missing fields.");
-  
+
   if(!(await prisma.treino.findUnique({
     where: { id: execucaoInsert.diarioId, usuarioId: userId },
     select: { id: true }
@@ -71,6 +72,28 @@ export async function POST(req: NextRequest) {
         exercicio: { connect: { id: execucaoInsert.exercicioId } },
        },
     });
+
+    if (isEmpty === "true"){
+      console.log("deletar execucoes reais zeradas");
+      await prisma.execucaoReal.deleteMany({
+        where: {
+          AND: [
+            { OR: [{ reps: 0 }, { reps: null }] },
+            { OR: [{ sets: 0 }, { sets: null }] },
+            { OR: [{ comentarioExecucao: "" }, { comentarioExecucao: null }] },
+            { OR: [{ tempo: 0 }, { tempo: null }] },
+            { OR: [{ percepcao: "" }, { percepcao: null }] },
+            { exercicioId: exercicioId },
+            { 
+              diario: {
+                id: diarioId,
+                usuarioId: userId
+              }
+            }
+          ]
+        }
+      });
+    }
 
     return NextResponse.json(
       {
