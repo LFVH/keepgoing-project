@@ -255,7 +255,7 @@ const FormDiario = ({ onSuccess }: any) => {
       } catch (error) {
         console.log("Erro durante o submit:", error);
       } finally {
-        console.log("Finalizado o processo de submitLinha");
+        console.log("Finalizado o processo");
       }
     
       return;
@@ -265,14 +265,14 @@ const FormDiario = ({ onSuccess }: any) => {
   }
 
   const handleCloseAddExecucao = () => {
-    router.push(`?editar-treino=open&treino=${registroId}`)
-    if (addExecucaoForm.exercicioId || addExecucaoForm.reps || addExecucaoForm.sets || addExecucaoForm.carga) {
-      if (confirm('Você tem alterações não salvas. Deseja realmente fechar?')) {
-        resetAddExecucaoForm()
-        setIsAddExecucaoOpen(false)
-      }
-    } else {
-      setIsAddExecucaoOpen(false)
+    const hasChanges = addExecucaoForm.exercicioId || addExecucaoForm.reps || addExecucaoForm.sets || addExecucaoForm.carga;
+
+    const shouldClose = !hasChanges || confirm('Você tem alterações não salvas. Deseja realmente fechar?');
+  
+    if (shouldClose) {
+      resetAddExecucaoForm();
+      setIsAddExecucaoOpen(false);
+      router.push(`?editar-treino=open&treino=${registroId}`);
     }
   }
 
@@ -422,7 +422,7 @@ const FormDiario = ({ onSuccess }: any) => {
     }
   
     try {
-      const treinoSalvo = await toast.promise(
+      const diarioSalvo = await toast.promise(
         handleLinha(
           isEditing ? data?.id ?? null : null,
           dataLinha,
@@ -444,7 +444,7 @@ const FormDiario = ({ onSuccess }: any) => {
           },
         }
       );
-      return treinoSalvo;
+      return diarioSalvo;
     } catch (error) {
       toast.error("Erro ao submeter os dados.");
       return null;
@@ -482,6 +482,50 @@ const FormDiario = ({ onSuccess }: any) => {
     setExerciciosVazios(tempExerciciosVazios);
     return Object.values(agrupado);
   })();
+
+  const handleTreinoClick = async (treino: TreinoOption) => {
+    if(linha?.execucoes && !confirm('Alterar o treino altera (exclui e insere) TODOS os exercícios/execuções com base no treino. Deseja realmente alterar?')){
+      return;
+    }
+    setSelectedTreino(treino);
+    setValue("treinoId", treino.id);
+    setSearchTreinoTerm('');
+  
+    try {
+      const responseSubmit = await submitLinha(getValues());
+  
+      if (!responseSubmit || !responseSubmit.data?.id) {
+        console.log("Falha ao salvar o registro");
+        return;
+      }
+      
+      const diarioId = registroId ? registroId : responseSubmit.data?.id;
+      if(diarioId){
+        throw new Error('Erro ID 3988672');
+      }
+      const response = await fetch(`/api/migrarExecucao/${treino.id}`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          diarioId,
+        }),
+      });
+  
+      if (!response.ok) {
+        throw new Error('Erro ao migrar execução');
+      }
+    
+      const data = await response.json();
+      console.log('Migração realizada com sucesso:' + data);
+      await router.push(
+        `?editar-diario=open&registro=${data.id}`,
+        { scroll: false })
+    } catch (error) {
+      console.error('Erro complicado: ', error);
+    }
+  };
 
   const isValidDate = !isNaN((new Date(currentData ? currentData : "")).getTime());
   return (
@@ -526,40 +570,7 @@ const FormDiario = ({ onSuccess }: any) => {
                     <div
                       key={treino.id}
                       className={`p-2 hover:bg-gray-100 cursor-pointer ${currentTreinoId  === treino.id ? 'bg-blue-100' : ''}`}
-                      onClick={async () => {
-                        setSelectedTreino(treino);
-                        setValue("treinoId", treino.id);
-                        setSearchTreinoTerm('');
-
-                        const formData = getValues(); 
-                        const diario= {
-                          dataLinha : formData.data,
-                          comment   : formData?.comment?.trim(),
-                          peso      : formData.peso,
-                          treinoId  : formData.treinoId,
-                        }
-                        try {
-                          const response = await fetch(`/api/migrarExecucao/${treino.id}`, {
-                            method: "POST",
-                            headers: {
-                              "Content-Type": "application/json",
-                            },
-                            body: JSON.stringify(diario), // Certifique-se que 'diario' está disponível aqui
-                          });
-                      
-                          if (!response.ok) {
-                            throw new Error('Erro ao migrar execução');
-                          }
-                          
-                          const data = await response.json();
-                          console.log('Migração realizada com sucesso:', data);
-                          // Adicione qualquer tratamento adicional aqui
-                        } catch (error) {
-                          console.error('Erro:', error);
-                          // Trate o erro conforme necessário
-                        }
-
-                      }}
+                      onClick={() => handleTreinoClick(treino)}
                     >
                       {treino.nome}
                     </div>

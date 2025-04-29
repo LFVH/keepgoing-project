@@ -197,33 +197,25 @@ const FormTreino = ({ onSuccess }: any) => {
 
   const handleOpenAddExecucao = async (exercicio?: ExercicioOption) => {
     if (!treinoId) {
-      const originalOnSuccess = onSuccess;
-      let shouldOpenDialog = false;
-
-      onSuccess = () => {
-        console.log("faço nada fi");
-      };
       try {
-      const formData = getValues(); 
-      const submitTreinoResponse = await onSubmit(formData); 
-
-      console.log(submitTreinoResponse)
-      if (!submitTreinoResponse.data.id) {
-       console.log("fail");
-        return;
-      } else{
-        await router.push(`?editar-treino=open&treino=${submitTreinoResponse.data.id}&fastaddexec=true`, {
-          scroll: false 
-        });
+        const response = await submitTreino(getValues());
+    
+        if (!response || !response.data?.id) {
+          console.log("Falha ao salvar o registro");
+          return;
+        }
+    
+        await router.push(
+          `?editar-treino=open&treino=${response.data.id}&fastaddexec=true`,
+          { scroll: false }
+        );
+      } catch (error) {
+        console.log("Erro durante o submit:", error);
+      } finally {
+        console.log("Finalizado o processo de submitLinha");
       }
-    }
-    catch(error) {
-      console.log(error);
-    } finally{
-      console.log("finally")
-    }
     return;
-    }
+  }
     await fetchExercicios('',exercicio)
     setIsAddExecucaoOpen(true)
   }
@@ -341,6 +333,13 @@ const FormTreino = ({ onSuccess }: any) => {
   }
 
   const onSubmit = async (data: IForm) => {
+    const result = await submitTreino(data);
+    if (result) {
+      onSuccess();
+    }
+  };
+
+  const submitTreino = async (data: IForm) => {
     const nome = data.nome.trim();
     const comment = data.coment.trim();
     const corCalendario = data.corCalendario.trim();

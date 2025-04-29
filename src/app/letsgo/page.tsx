@@ -28,7 +28,7 @@ export default function Page() {
             <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
               <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
       
-                  Obrigado! Treine, registre, avance!
+                  Parabéns! Treine, registre, avance!
       
               </ol>
               <button
