@@ -15,7 +15,8 @@ export async function GET(req: NextRequest) {
       nome: {
         contains: searchTerm,
         mode: 'insensitive'
-      }
+      },
+      isAtivo: true
     },
     select: {
       id: true,

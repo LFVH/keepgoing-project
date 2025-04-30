@@ -68,7 +68,7 @@ const FormDiario = ({ onSuccess }: any) => {
   const [isSearching, setIsSearching] = useState(false)
   const [isEditing, setIsEditing] = useState(false);
   const [isAddExecucaoOpen, setIsAddExecucaoOpen] = useState(false) ;
-  const [exerciciosVazios, setExerciciosVazios] = useState<number[]>([]);
+  //const [exerciciosVazios, setExerciciosVazios] = useState<number[]>([]);
   const [exerciciosOptions, setExerciciosOptions] = useState<ExercicioOption[]>([])
   const [treinosOptions, setTreinosOptions] = useState<ExercicioOption[]>([])
   const [searchTerm, setSearchTerm] = useState('')
@@ -197,6 +197,33 @@ const FormDiario = ({ onSuccess }: any) => {
       console.error(error);
     }
   };
+
+    const handleRemoveExercicio = async (exercicio?: ExercicioOption) => {
+      if (!confirm('Remover as execuções e o exercício "'+ exercicio?.nome + '" desse registro?' )) return;
+      try {
+        const response = await fetch(`/api/execucaoreal/exercicio/${exercicio?.id}`, {
+          method: "DELETE",
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            registroId,
+          }),
+  
+        });
+  
+        if (!response.ok) {
+          console.log("!response.ok")
+          toast.error("Falha ao remover");
+        }
+  
+        toast.success("Removido com sucesso");
+        refetch();
+      } catch (error) {
+        toast.error("Erro ao remover");
+        console.error(error);
+      }
+    };
   
   const fetchTreinos = async (term = '', treino?: TreinoOption) => {
     try {
@@ -242,7 +269,6 @@ const FormDiario = ({ onSuccess }: any) => {
     if (!registroId) {
       try {
         const response = await submitLinha(getValues());
-    
         if (!response || !response.data?.id) {
           console.log("Falha ao salvar o registro");
           return;
@@ -294,10 +320,7 @@ const FormDiario = ({ onSuccess }: any) => {
   const handleSearchTreinos = async (term: string) => {
     setSearchTreinoTerm(term)
   
-    // Cancela o timeout anterior
     if (searchTimeout) clearTimeout(searchTimeout)
-    
-    // Só pesquisa após 300ms do último caractere digitado
     if (term.length >= 2) {
       const timeout = setTimeout(() => {
         fetchTreinos(term)
@@ -325,7 +348,6 @@ const FormDiario = ({ onSuccess }: any) => {
     }
   }
   
-  // Limpa o timeout quando o componente desmontar
   useEffect(() => {
     return () => {
       if (searchTimeout) clearTimeout(searchTimeout)
@@ -361,7 +383,7 @@ const FormDiario = ({ onSuccess }: any) => {
           carga: carga,
           comentarioExecucao: comentarioExec,
           tempo: tempo,
-          isEmpty: (exerciciosVazios.includes(addExecucaoForm.exercicioId))
+          //isEmpty: (exerciciosVazios.includes(addExecucaoForm.exercicioId))
           //ordem: nrOrdem,
         }),
       })
@@ -453,7 +475,7 @@ const FormDiario = ({ onSuccess }: any) => {
 
   const execucoesPorExercicio = (() => {
     const agrupado: Record<number, { exercicio: { id: number, nome: string }, execucoes: Execucao[] }> = {};
-    const tempExerciciosVazios: number[] = []
+    //const tempExerciciosVazios: number[] = []
     linha?.execucoes?.forEach((execucao) => {
       // Verifica se todos os campos relevantes estão vazios/zero
       const camposVazios = 
@@ -465,21 +487,20 @@ const FormDiario = ({ onSuccess }: any) => {
   
       // Se NÃO estiverem todos vazios (ou seja, se pelo menos um campo tem valor válido)
       const exercicioId = execucao.exercicio.id;
-      if (!camposVazios) {
-  
-        if (!agrupado[exercicioId]) {
-          agrupado[exercicioId] = {
-            exercicio: execucao.exercicio,
-            execucoes: []
-          };
-        }
-  
-        agrupado[exercicioId].execucoes.push(execucao);
-      } else{
-        tempExerciciosVazios.push(exercicioId);
+      if (!agrupado[exercicioId]) {
+        agrupado[exercicioId] = {
+          exercicio: execucao.exercicio,
+          execucoes: []
+        };
       }
+      if (!camposVazios) {
+        agrupado[exercicioId].execucoes.push(execucao);
+      }
+      //  else{
+      //   tempExerciciosVazios.push(exercicioId);
+      // }
     });
-    setExerciciosVazios(tempExerciciosVazios);
+    //setExerciciosVazios(tempExerciciosVazios);
     return Object.values(agrupado);
   })();
 
@@ -500,7 +521,7 @@ const FormDiario = ({ onSuccess }: any) => {
       }
       
       const diarioId = registroId ? registroId : responseSubmit.data?.id;
-      if(diarioId){
+      if(!diarioId){
         throw new Error('Erro ID 3988672');
       }
       const response = await fetch(`/api/migrarExecucao/${treino.id}`, {
@@ -541,7 +562,6 @@ const FormDiario = ({ onSuccess }: any) => {
               placeholder="Buscar treinos..."
               value={selectedTreino ? selectedTreino.nome : searchTreinoTerm}
               onChange={(e) => {
-                // Se tiver um exercício selecionado e o usuário começar a digitar, limpa a seleção
                 if (selectedTreino && e.target.value !== selectedTreino.nome) {
                   setSelectedTreino(null);
                   setValue("treinoId", null);
@@ -661,7 +681,14 @@ const FormDiario = ({ onSuccess }: any) => {
                     onClick={() => handleOpenAddExecucao(exercicio)}
                     className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600"
                   >
-                    +
+                    +Execução
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveExercicio(exercicio)}
+                    className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-900"
+                  >
+                    Remover tudo
                   </button>
                 </div>
                 {execucoes && (

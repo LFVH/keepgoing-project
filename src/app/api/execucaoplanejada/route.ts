@@ -39,8 +39,7 @@ export async function POST(req: NextRequest) {
       carga,             
       tempo,             
       ordem,             
-      comentarioExecucao,
-      isEmpty
+      comentarioExecucao
     } = requestData;
   
     const execucaoInsert = {
@@ -72,27 +71,6 @@ export async function POST(req: NextRequest) {
         exercicio: { connect: { id: execucaoInsert.exercicioId } },
        },
     });
-
-    if (isEmpty === "true"){
-      console.log("deletar execucoes planejadas zeradas");
-      await prisma.execucaoPlano.deleteMany({
-        where: {
-          AND: [
-            { OR: [{ reps: 0 }, { reps: null }] },
-            { OR: [{ sets: 0 }, { sets: null }] },
-            { OR: [{ comentarioExecucao: "" }, { comentarioExecucao: null }] },
-            { OR: [{ tempo: 0 }, { tempo: null }] },
-            { exercicioId: exercicioId },
-            { 
-              treino: {
-                id: treinoId,
-                usuarioId: userId
-              }
-            }
-          ]
-        }
-      });
-    }
     return NextResponse.json(
       {
         success: true,

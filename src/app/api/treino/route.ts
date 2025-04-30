@@ -7,14 +7,22 @@ export async function GET(
 ) {
   try {
     const userId = await verifyUser(req);
-    if (userId instanceof NextResponse) {
-      return userId;} 
+    if (userId instanceof NextResponse) return userId;
 
-
+    const { searchParams } = new URL(req.url);
+    const ativo = searchParams.get('ativo'); 
+    
     const usuario = await prisma.usuario.findUnique({
       where: { id: userId },
       include: {
-        treinos: true
+        treinos: {
+          where: {
+            isAtivo: ativo !== null ? ativo === 'true' : undefined
+          },
+          orderBy: {
+            ordem: 'asc'
+          }
+        }
       },
     });
 

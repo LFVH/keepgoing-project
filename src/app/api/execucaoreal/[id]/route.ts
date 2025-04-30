@@ -10,10 +10,12 @@ export async function DELETE(
     const id = parseInt((await  params).id, 10);
     const userId = await verifyUser(req);
     if (userId instanceof NextResponse) return userId; 
+    if (isNaN(id)) return NextResponse.json({ message: "id inválido" }, { status: 400 });
 
     const requestData = await req.json();
-
+    
     const diarioId = parseInt(requestData.diarioId)
+    if (isNaN(diarioId)) return NextResponse.json({ message: "inválido" }, { status: 400 });
 
     await prisma.execucaoReal.delete({
       where: {

@@ -4,18 +4,22 @@ import { Panel, PanelGroup, Avatar, Loader } from "rsuite"
 import { toast } from "react-toastify"
 import { useSearchParams, useRouter } from "next/navigation"
 import { LuAward,LuPencil } from "react-icons/lu"
+import { FaArchive, FaUndo } from 'react-icons/fa';
 import { FaTrashAlt } from "react-icons/fa"
 import { useQuery } from "@tanstack/react-query"
 import CreateTreino from "./components/create-treino"
 import EditTreino from "./components/update-treino"
 import { Button } from '@/components/ui/button';
-import { startTransition } from "react"
-const fetchTreinos = async () => {
-    const response = await fetch(`/api/treino`, { method: "GET" });
-    const data = await response.json();
-    return data.data || [];
-  };
-const Treinos = () => {
+import { PlusIcon, CheckIcon, ArchiveBoxIcon, ListBulletIcon } from "@heroicons/react/24/outline";
+import { startTransition, useState } from "react"
+const fetchTreinos = async (ativo?: boolean | null) => {
+  const url = `/api/treino${ativo !== null ? `?ativo=${ativo}` : ''}`;
+  const response = await fetch(url, { method: "GET" });
+  const data = await response.json();
+  return data.data || [];
+};
+const Treinos = () => { 
+  const [filtroAtivo, setFiltroAtivo] = useState<boolean | null>(true);
   const searchParams = useSearchParams()
   const router = useRouter()
 
@@ -28,9 +32,9 @@ const Treinos = () => {
     isError, 
     error,
    } = useQuery({
-    queryKey: ["getTreinosUsuario"],
+    queryKey: ["getTreinosUsuario",filtroAtivo],
     initialData: [],
-    queryFn: () => fetchTreinos(),
+    queryFn: () => fetchTreinos(filtroAtivo),
   })
 
   if (isLoading || isFetching) {
@@ -76,37 +80,106 @@ const Treinos = () => {
     refetch(); 
     startTransition(() => router.push("?"));
   };
+  const toggleTreinoStatus = async (treinoId: number, currentStatus: boolean) => {
+    try {
+      const response = await fetch(`/api/treino/${treinoId}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ isAtivo: !currentStatus }),
+      });
+  
+      if (!response.ok) {
+        throw new Error('Falha ao atualizar status');
+      }
+  
+      // Atualiza a lista de treinos após a mudança
+      refetch();
+    } catch (error) {
+      console.error('Erro ao alternar status:', error);
+      // Você pode adicionar um toast de erro aqui se quiser
+    }
+  };
   return (
     
-    <div className="p-4 max-w-4xl mx-auto">
+    <div className="p-4 max-w-4xl mx-auto space-y-4">
+    {/* Header Buttons */}
+    <div className="flex justify-between items-center">
       <Button 
         title="Voltar ao início" 
         onClick={() => router.push("/letsgo")}
-        className="bg-gray-500 hover:bg-black-600 text-white px-4 py-2 rounded"
+        className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md shadow transition-colors duration-200"
       >
         Voltar ao início
       </Button>
-  <div className="mb-4">
-    {isCreateTreinoModalOpen || editEventModal ? (
-      <Button 
-        title="Voltar" 
-        onClick={() => router.push("?")}
-        className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded"
+      
+      <div className="mb-4">
+        {isCreateTreinoModalOpen || editEventModal ? (
+          <Button 
+            title="Voltar" 
+            onClick={() => router.push("?")}
+            className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md shadow transition-colors duration-200"
+          >
+            Voltar
+          </Button>
+        ) : (
+          <Button
+            title="Adicionar"
+            onClick={() => {
+              setFiltroAtivo(true);
+              router.push("?criar-treino=open");
+            }}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md shadow transition-colors duration-200"
+          >
+            <PlusIcon className="mr-2 h-4 w-4" />
+            Adicionar
+          </Button>
+        )}
+      </div>
+    </div>
+  
+    {/* Filter Buttons */}
+    <div className="flex gap-2 mb-4">
+      <Button
+        title="Mostrar ativos"
+        onClick={() => setFiltroAtivo(true)}
+        className={`px-4 py-2 rounded-md shadow transition-colors duration-200 ${
+          filtroAtivo === true 
+            ? 'bg-green-600 hover:bg-green-700 text-white' 
+            : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
+        }`}
       >
-        Voltar
+        <CheckIcon className="mr-2 h-4 w-4" />
+        Ativos
       </Button>
-    ) : (
       
       <Button
-        title="Adicionar"
-        onClick={() => router.push("?criar-treino=open")}
-        className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+        title="Mostrar arquivados"
+        onClick={() => setFiltroAtivo(false)}
+        className={`px-4 py-2 rounded-md shadow transition-colors duration-200 ${
+          filtroAtivo === false 
+            ? 'bg-yellow-600 hover:bg-yellow-700 text-white' 
+            : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
+        }`}
       >
-        Adicionar
+        <ArchiveBoxIcon className="mr-2 h-4 w-4" />
+        Arquivados
       </Button>
-    )}
-  </div>
-
+      
+      <Button
+        title="Mostrar todos"
+        onClick={() => setFiltroAtivo(null)}
+        className={`px-4 py-2 rounded-md shadow transition-colors duration-200 ${
+          filtroAtivo === null 
+            ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+            : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
+        }`}
+      >
+        <ListBulletIcon className="mr-2 h-4 w-4" />
+        Todos
+      </Button>
+    </div>
   {isCreateTreinoModalOpen && (
     <CreateTreino onSuccess={handleSuccess}/>
   )}
@@ -159,11 +232,19 @@ const Treinos = () => {
                         <LuPencil className="w-5 h-5" />
                       </button>
                       <button
-                        onClick={() => handleDeleteTreino(treino.id)}
-                        className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition-colors"
-                        title="Excluir"
+                        onClick={() => toggleTreinoStatus(treino.id, treino.isAtivo)}
+                        className={`p-1 rounded-full transition-colors ${
+                          treino.isAtivo
+                            ? 'text-yellow-500 hover:text-yellow-700 hover:bg-yellow-50'
+                            : 'text-green-500 hover:text-green-700 hover:bg-green-50'
+                        }`}
+                        title={treino.isAtivo ? "Arquivar" : "Ativar"}
                       >
-                        <FaTrashAlt className="w-5 h-5" />
+                        {treino.isAtivo ? (
+                          <FaArchive className="w-5 h-5" /> // Ícone para arquivar
+                        ) : (
+                          <FaUndo className="w-5 h-5" /> // Ícone para reativar
+                        )}
                       </button>
                     </div>
                   </div>

@@ -55,7 +55,6 @@ const FormTreino = ({ onSuccess }: any) => {
   const router = useRouter();
   const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout>()
   const [isSearching, setIsSearching] = useState(false);
-  const [exerciciosVazios, setExerciciosVazios] = useState<number[]>([]);
   const [isEditing, setIsEditing] = useState(false);
   const [isAddExecucaoOpen, setIsAddExecucaoOpen] = useState(false)
   const [exerciciosOptions, setExerciciosOptions] = useState<ExercicioOption[]>([])
@@ -78,6 +77,7 @@ const FormTreino = ({ onSuccess }: any) => {
     queryKey: ['treino', treinoId],
     enabled: !!treinoId,
     queryFn: async () => {
+      console.log("get maroto")
       const response = await fetch(`/api/treino/${treinoId}`, { method: "GET" });
       const data = await response.json();
       return data.treino || null;
@@ -94,7 +94,7 @@ const FormTreino = ({ onSuccess }: any) => {
 
   useEffect(() => {
     const setDataValues = () => {
-      if (isSuccess && treino) {
+      if (isSuccess && treino?.id) {
         setIsEditing(true);
         reset({
           id: treino?.id.toString(),
@@ -105,7 +105,7 @@ const FormTreino = ({ onSuccess }: any) => {
       }
     }
     setDataValues()
-  }, [treino, isSuccess, reset, setValue]);
+  }, [treino?.id, isSuccess, reset, setValue]);
 
   async function handleTreino(
     id: string | null,
@@ -150,6 +150,7 @@ const FormTreino = ({ onSuccess }: any) => {
   }
 
   const handleRemoveExecucao = async (execucaoId: number) => {
+    if (!confirm('Remover essa forma de execução?')) return;
     try {
       const response = await fetch(`/api/execucaoplanejada/${execucaoId}`, {
         method: "DELETE",
@@ -171,6 +172,32 @@ const FormTreino = ({ onSuccess }: any) => {
       refetch();
     } catch (error) {
       toast.error("Erro ao remover execução");
+      console.error(error);
+    }
+  };
+  const handleRemoveExercicio = async (exercicio?: ExercicioOption) => {
+    if (!confirm('Remover as execuções e o exercício "'+ exercicio?.nome + '" desse treino?' )) return;
+    try {
+      const response = await fetch(`/api/execucaoplanejada/exercicio/${exercicio?.id}`, {
+        method: "DELETE",
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          treinoId,
+        }),
+
+      });
+
+      if (!response.ok) {
+        console.log("!response.ok")
+        toast.error("Falha ao remover");
+      }
+
+      toast.success("Removido com sucesso");
+      refetch();
+    } catch (error) {
+      toast.error("Erro ao remover");
       console.error(error);
     }
   };
@@ -300,7 +327,6 @@ const FormTreino = ({ onSuccess }: any) => {
           carga: carga,
           comentarioExecucao: comentarioExec,
           tempo: tempo,
-          isEmpty: (exerciciosVazios.includes(addExecucaoForm.exercicioId))
           //ordem: nrOrdem,
         }),
       })
@@ -335,11 +361,13 @@ const FormTreino = ({ onSuccess }: any) => {
   const onSubmit = async (data: IForm) => {
     const result = await submitTreino(data);
     if (result) {
+      console.log("result");
       onSuccess();
     }
   };
 
   const submitTreino = async (data: IForm) => {
+    console.log("submitTreino");
     const nome = data.nome.trim();
     const comment = data.coment.trim();
     const corCalendario = data.corCalendario.trim();
@@ -373,7 +401,6 @@ const FormTreino = ({ onSuccess }: any) => {
         pending: isEditing ? "Atualizando ..." : "Criando ...",
         success: {
           render({ data }): any {
-            onSuccess();
             return data.message || (isEditing ? "Atualização finalizada com sucesso" : "Treino criado com sucesso");
           },
         },
@@ -388,7 +415,7 @@ const FormTreino = ({ onSuccess }: any) => {
  
   const execucoesPorExercicio = (() => {
     const agrupado: Record<number, { exercicio: { id: number, nome: string }, execucoes: Execucao[] }> = {};
-    const tempExerciciosVazios: number[] = []
+    //const tempExerciciosVazios: number[] = []
     treino?.execucoes?.forEach((execucao) => {
       // Verifica se todos os campos relevantes estão vazios/zero
       const camposVazios = 
@@ -399,21 +426,20 @@ const FormTreino = ({ onSuccess }: any) => {
   
       // Se NÃO estiverem todos vazios (ou seja, se pelo menos um campo tem valor válido)
       const exercicioId = execucao.exercicio.id;
-      if (!camposVazios) {
-  
-        if (!agrupado[exercicioId]) {
-          agrupado[exercicioId] = {
-            exercicio: execucao.exercicio,
-            execucoes: []
-          };
-        }
-  
-        agrupado[exercicioId].execucoes.push(execucao);
-      } else{
-        tempExerciciosVazios.push(exercicioId);
+      if (!agrupado[exercicioId]) {
+        agrupado[exercicioId] = {
+          exercicio: execucao.exercicio,
+          execucoes: []
+        };
       }
+      if (!camposVazios) {  
+        agrupado[exercicioId].execucoes.push(execucao);
+      }
+      // else{
+      //   tempExerciciosVazios.push(exercicioId);
+      // }
     });
-    setExerciciosVazios(tempExerciciosVazios);
+    //setExerciciosVazios(tempExerciciosVazios);
   
     return Object.values(agrupado);
   })();
@@ -445,7 +471,7 @@ const FormTreino = ({ onSuccess }: any) => {
             </div>
 
           <div>
-            <label htmlFor="coment" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="comment" className="block text-sm font-medium text-gray-700 mb-1">
               Comentários sobre o treino
             </label>
             <input
@@ -495,7 +521,14 @@ const FormTreino = ({ onSuccess }: any) => {
                     onClick={() => handleOpenAddExecucao(exercicio)}
                     className="px-3 py-1 bg-green-500 text-white rounded hover:bg-green-600"
                   >
-                    +
+                    +Execução
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveExercicio(exercicio)}
+                    className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-900"
+                  >
+                    Remover tudo
                   </button>
                 </div>
 
@@ -582,7 +615,7 @@ const FormTreino = ({ onSuccess }: any) => {
         <Dialog open={isAddExecucaoOpen||searchParams.get("fastaddexec")==="true"} onClose={handleCloseAddExecucao} className="relative z-50">
         <div className="fixed inset-0 bg-black/30" aria-hidden="true" />
         <div className="fixed inset-0 flex items-center justify-center p-4">
-        
+          
           <DialogPanel className="w-full max-w-md rounded bg-white p-6 relative">
           <button
             onClick={handleCloseAddExecucao}

@@ -38,6 +38,7 @@ model Exercicio {
   execucoesReal  ExecucaoReal[]
   updatedAt      DateTime @updatedAt
   createdAt      DateTime @default(now())
+  @@index([nome])
 }
 
 model Treino {
@@ -52,6 +53,8 @@ model Treino {
   ordem           Int?
   updatedAt       DateTime @updatedAt
   createdAt       DateTime @default(now())
+  isAtivo         Boolean @default(true)
+  @@index([isAtivo])
 }
 
 model LinhasDiario {

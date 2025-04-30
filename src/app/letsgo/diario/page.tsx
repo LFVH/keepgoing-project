@@ -73,6 +73,7 @@ const Linhas = () => {
     searchParams.get("registro")?.trim() !== ""
 
   const handleSuccess = () => {
+    console.log("entrou no original")
     refetch(); 
     startTransition(() => router.push("?"));
   };

@@ -16,10 +16,9 @@ export default async function POST(
     if (!requestData.diarioId) return NextResponse.json({ message: "O campo 'di' é obrigatório" }, { status: 400 });
     if (isNaN(treinoId)) return NextResponse.json({ message: "ID inválido" }, { status: 400 });
     
-    const { 
-        diarioId
-      } = requestData;
-
+    const diarioId  = parseInt(requestData.diarioId);
+    if (isNaN(diarioId)) return NextResponse.json({ message: "inválido" }, { status: 400 });
+    
     // Busca o treino com suas execuções
     const treinoDB = await prisma.treino.findUnique({
         where: { id: treinoId, usuarioId: userId },

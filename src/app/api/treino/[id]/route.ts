@@ -37,10 +37,7 @@ export async function GET(
       return userId;} 
 
     const id = parseInt((await  params).id, 10);
-
-    if (isNaN(id)) {
-      return NextResponse.json({ message: "ID inválido" }, { status: 400 });
-    }
+    if (isNaN(id)) return NextResponse.json({ message: "ID inválido" }, { status: 400 });
 
     const treino = await prisma.treino.findUnique({
       where: { id, usuarioId: userId },
@@ -107,6 +104,61 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     console.error("Erro ao atualizar treino:", error);
     return NextResponse.json(
       { success: false,  message: "Houve um erro no servidor" },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PATCH(
+  req: NextRequest,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const userId = await verifyUser(req);
+    if (userId instanceof NextResponse) return userId;
+
+    const treinoId = parseInt((await  params).id);
+    if (isNaN(treinoId)) return NextResponse.json({ message: "inválido" }, { status: 400 });
+    const { isAtivo: isAtivoRaw } = await req.json();
+    
+    // Garante que isAtivo seja booleano
+    const isAtivo = typeof isAtivoRaw === 'string' 
+      ? isAtivoRaw === 'true' 
+      : Boolean(isAtivoRaw);
+
+    if (typeof isAtivo !== 'boolean') {
+      return NextResponse.json(
+        { error: "O campo isAtivo deve ser um valor booleano (true/false)" },
+        { status: 400 }
+      );
+    }
+
+    // Verifica se o treino pertence ao usuário
+    const treino = await prisma.treino.findFirst({
+      where: {
+        id: treinoId,
+        usuarioId: userId
+      }
+    });
+
+    if (!treino) {
+      return NextResponse.json(
+        { error: "Treino não encontrado ou não pertence ao usuário" },
+        { status: 404 }
+      );
+    }
+
+    // Atualiza o status
+    const updatedTreino = await prisma.treino.update({
+      where: { id: treinoId },
+      data: { isAtivo }
+    });
+
+    return NextResponse.json({ data: updatedTreino });
+  } catch (error) {
+    console.error("Erro ao atualizar status do treino:", error);
+    return NextResponse.json(
+      { error: "Erro ao atualizar status do treino" },
       { status: 500 }
     );
   }
