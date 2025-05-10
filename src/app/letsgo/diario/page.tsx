@@ -77,7 +77,7 @@ const Linhas = () => {
     refetch(); 
     startTransition(() => router.push("?"));
   };
-  return (
+  return (  
     
     <div className="p-4 max-w-4xl mx-auto">
       <Button 
@@ -129,7 +129,7 @@ const Linhas = () => {
                     {/* Quadrado com a cor do treino */}
                     <div 
                       className="w-5 h-5 rounded-sm flex-shrink-0 mt-1" 
-                      style={{ backgroundColor: linha.treino.corCalendario || '#cccccc' }}
+                      style={{ backgroundColor: linha?.treino?.corCalendario || '#cccccc' }}
                     />
                     
                     <div className="flex-grow flex flex-col">
@@ -138,7 +138,7 @@ const Linhas = () => {
                           {format(new Date(linha?.data), 'dd/MM/yyyy HH:mm')}
                         </span>
                         <span className="text-lg font-semibold text-black">
-                          {linha?.treino.nome}
+                          {linha?.treino?.nome || '------'} 
                         </span>
                       </div>
                       

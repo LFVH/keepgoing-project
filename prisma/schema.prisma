@@ -13,6 +13,7 @@ model Usuario {
   email        String   @unique
   password     String
   linhasDiario LinhasDiario[]
+  exercicios   Exercicio[]
   refreshToken RefreshToken?
   treinos      Treino[]
   premium      Boolean?
@@ -38,6 +39,8 @@ model Exercicio {
   execucoesReal  ExecucaoReal[]
   updatedAt      DateTime @updatedAt
   createdAt      DateTime @default(now())
+  user           Usuario?  @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate:   Cascade)
+  userId         String?
   @@index([nome])
 }
 

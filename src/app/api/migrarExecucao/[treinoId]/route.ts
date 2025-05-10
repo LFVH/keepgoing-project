@@ -2,8 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/database/prisma';
 import { verifyUser } from '@/utils/verifyUserAuth';
 
-
-export default async function POST(
+export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ treinoId: string }> }
 ) {

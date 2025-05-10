@@ -95,7 +95,9 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
         data: new Date(data),
         pesoCorporal: pesoCorporal !== undefined ? isNaN(parseFloat(pesoCorporal)) ? null : parseFloat(pesoCorporal) : null,
         comentarioGeral,
-        treino: { connect: { id: parseInt(treinoId) } },
+        ...(treinoId !== undefined && !isNaN(parseInt(treinoId)) && {
+          treino: { connect: { id: parseInt(treinoId) } }
+        })
       },
       
     });

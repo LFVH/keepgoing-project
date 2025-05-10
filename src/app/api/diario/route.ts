@@ -56,8 +56,10 @@ export async function POST(req: NextRequest) {
         pesoCorporal: pesoCorporal !== undefined ? isNaN(parseFloat(pesoCorporal)) ? null : parseFloat(pesoCorporal) : null,
         comentarioGeral,
         usuario: { connect: { id: userId } },
-        treino: { connect: { id: parseInt(treinoId) } },
-      },
+        ...(treinoId !== undefined && !isNaN(parseInt(treinoId)) && {
+          treino: { connect: { id: parseInt(treinoId) } }
+        })
+      }
     });
 
     return NextResponse.json(

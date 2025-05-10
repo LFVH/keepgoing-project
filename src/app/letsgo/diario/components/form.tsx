@@ -87,17 +87,20 @@ const FormDiario = ({ onSuccess }: any) => {
   })
   const searchParams = useSearchParams()
   const registroId = searchParams.get("registro")
-  const { data: linha, isSuccess, isLoading, refetch } = useQuery<LinhaComExecucoes>({
+  const { data: linha, isSuccess, isLoading,isError, refetch } = useQuery<LinhaComExecucoes>({
     refetchOnWindowFocus: false,
     queryKey: ['diario', registroId],
     enabled: !!registroId,
     queryFn: async () => {
+      if (isNaN(Number(registroId))) {
+        router.push('/letsgo/diario');
+        return null;
+      }
       const response = await fetch(`/api/diario/${registroId}`, { method: "GET" });
       const data = await response.json();
       return data.linha || null;
     },
   })
-
   const { register, handleSubmit, setValue, reset, getValues,formState: { errors },watch  } = useForm<IForm>({
     defaultValues: {
       data: new Date().toISOString().slice(0, 16) 
@@ -120,9 +123,9 @@ const FormDiario = ({ onSuccess }: any) => {
           data: formattedDate,
           comment: linha?.comentarioGeral || "",
           peso: linha?.pesoCorporal || undefined,
-          treinoId: linha?.treino.id || null,
+          treinoId: linha?.treino?.id || null,
         })
-        setSelectedTreino({id: linha.treino.id, nome: linha.treino.nome});
+        setSelectedTreino({id: linha?.treino?.id, nome: linha?.treino?.nome});
       }
     }
     setDataValues()
@@ -268,7 +271,7 @@ const FormDiario = ({ onSuccess }: any) => {
   const handleOpenAddExecucao = async (exercicio?: ExercicioOption) => {
     if (!registroId) {
       try {
-        const response = await submitLinha(getValues());
+        const response = await saveLinha(getValues());
         if (!response || !response.data?.id) {
           console.log("Falha ao salvar o registro");
           return;
@@ -298,7 +301,7 @@ const FormDiario = ({ onSuccess }: any) => {
     if (shouldClose) {
       resetAddExecucaoForm();
       setIsAddExecucaoOpen(false);
-      router.push(`?editar-treino=open&treino=${registroId}`);
+      router.push(`?editar-diario=open&registro=${registroId}`);
     }
   }
 
@@ -415,13 +418,13 @@ const FormDiario = ({ onSuccess }: any) => {
   }
 
   const onSubmit = async (data: IForm) => {
-    const result = await submitLinha(data);
+    const result = await saveLinha(data);
     if (result) {
       onSuccess();
     }
   };
 
-  const submitLinha = async (data: IForm) => {
+  const saveLinha = async (data: IForm) => {
     const dataLinha = data.data;
     const comment = data?.comment?.trim();
     const peso = data.peso;
@@ -505,43 +508,42 @@ const FormDiario = ({ onSuccess }: any) => {
   })();
 
   const handleTreinoClick = async (treino: TreinoOption) => {
-    if(linha?.execucoes && !confirm('Alterar o treino altera (exclui e insere) TODOS os exercícios/execuções com base no treino. Deseja realmente alterar?')){
-      return;
-    }
+
+    const shouldOverride = confirm('Deseja sobrescrever todos os exercicios/execucões pelos do treino selecionado?');
+   
     setSelectedTreino(treino);
     setValue("treinoId", treino.id);
     setSearchTreinoTerm('');
   
     try {
-      const responseSubmit = await submitLinha(getValues());
+      const responseSubmit = await saveLinha(getValues());
   
       if (!responseSubmit || !responseSubmit.data?.id) {
         console.log("Falha ao salvar o registro");
-        return;
+        throw new Error('Falha ao alterar treino');
       }
       
       const diarioId = registroId ? registroId : responseSubmit.data?.id;
       if(!diarioId){
         throw new Error('Erro ID 3988672');
       }
-      const response = await fetch(`/api/migrarExecucao/${treino.id}`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          diarioId,
-        }),
-      });
-  
-      if (!response.ok) {
-        throw new Error('Erro ao migrar execução');
-      }
+      if(shouldOverride){
+        const response = await fetch(`/api/migrarExecucao/${treino.id}`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            diarioId,
+          }),
+        });
     
-      const data = await response.json();
-      console.log('Migração realizada com sucesso:' + data);
+        if (!response.ok) {
+          throw new Error('Erro ao migrar execução');
+        }
+      }
       await router.push(
-        `?editar-diario=open&registro=${data.id}`,
+        `?editar-diario=open&registro=${diarioId}`,
         { scroll: false })
     } catch (error) {
       console.error('Erro complicado: ', error);
@@ -641,7 +643,7 @@ const FormDiario = ({ onSuccess }: any) => {
                 step="0.01"
                 min="0"
                 max="999.99"
-                placeholder="Ex: 72.50"
+                placeholder="72.50"
                 className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
             </div>

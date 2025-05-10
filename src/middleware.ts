@@ -7,14 +7,13 @@ export const config = {
 }
 
 const authMiddleware = withAuth({
-  secret: process.env.NEXTAUTH_SECRET, // Garantir que use o mesmo secret (boa prática)
+  secret: process.env.NEXTAUTH_SECRET,
   pages: {
-    signIn: '/login', // se o usuário não estiver logado, redireciona pra cá
-    error: '/',       // se der erro, manda para home
+    signIn: '/login', 
+    error: '/',
   },
   callbacks: {
     authorized({ token }) {
-      // Só deixar passar quem tiver token (já logado)
       return !!token
     },
   },
