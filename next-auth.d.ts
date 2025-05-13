@@ -2,10 +2,11 @@ import NextAuth from "next-auth";
 
 declare module "next-auth" {
   interface Session {
-    id: string; // Aqui você adiciona o id do usuário
+    id: string; 
     email: string | null;
+    name: string | null;
     user: {
-      id: string; // Aqui você adiciona o id do usuário
+      id: string; 
       email: string | null;
       name: string | null;
       image: string | null;
@@ -13,7 +14,7 @@ declare module "next-auth" {
   }
   interface JWT {
     user: {
-      id: string; // Adiciona o id no JWT
+      id: string;
       email: string;
       name: string | null;
       image: string | null;

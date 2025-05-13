@@ -33,7 +33,7 @@ const AuthHandler :AuthOptions= {
         if (!passwordMatch) {
           throw new Error("Senha incorreta.");
         }
-      
+        
         return { id: user.id, name: user.name, email: user.email }; // Retorna os dados do usuário autenticado
       }
     }),
@@ -48,10 +48,10 @@ const AuthHandler :AuthOptions= {
           create: { userId: user.id, expiresIn },
           update: { expiresIn },
         });
-    
         token.user = {
           id: user.id,
           email: user.email,
+          name: user.name
         };
       }
       return token;
