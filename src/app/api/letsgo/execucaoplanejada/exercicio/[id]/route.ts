@@ -8,20 +8,20 @@ export async function DELETE(
 ) {
   try {
     const id = parseInt((await  params).id, 10);
-    const userId = await verifyUser(req);
+    const userId = await verifyUser();
     if (userId instanceof NextResponse) return userId; 
     if (isNaN(id)) return NextResponse.json({ message: "id inválido" }, { status: 400 });
 
     const requestData = await req.json();
 
-    const diarioId = parseInt(requestData.diarioId)
-    if (isNaN(diarioId)) return NextResponse.json({ message: "inválido" }, { status: 400 });
+    const treinoId = parseInt(requestData.treinoId)
+    if (isNaN(treinoId)) return NextResponse.json({ message: "inválido" }, { status: 400 });
 
-    await prisma.execucaoReal.deleteMany({
+    await prisma.execucaoPlano.deleteMany({
       where: {
         exercicioId: id,
-        diario: {
-          id: diarioId,
+        treino: {
+          id: treinoId,
           usuarioId: userId
         }
       }

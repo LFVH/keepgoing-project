@@ -8,7 +8,7 @@ export async function DELETE(
 ) {
   try {
     const id = parseInt((await  params).id, 10);
-    const userId = await verifyUser(req);
+    const userId = await verifyUser();
     if (userId instanceof NextResponse) return userId; 
     if (isNaN(id)) return NextResponse.json({ message: "id inválido" }, { status: 400 });
 
@@ -42,7 +42,7 @@ export async function GET(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const userId = await verifyUser(req);
+    const userId = await verifyUser();
     if (userId instanceof NextResponse) {
       return userId;} 
 
@@ -80,7 +80,7 @@ export async function GET(
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const userId = await verifyUser(req);
+    const userId = await verifyUser();
     const requestData = await req.json();
     const id = parseInt((await  params).id, 10);
     

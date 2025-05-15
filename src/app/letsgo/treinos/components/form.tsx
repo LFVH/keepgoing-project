@@ -78,7 +78,7 @@ const FormTreino = ({ onSuccess }: any) => {
     enabled: !!treinoId,
     queryFn: async () => {
       console.log("get maroto")
-      const response = await fetch(`/api/treino/${treinoId}`, { method: "GET" });
+      const response = await fetch(`/api/letsgo/treino/${treinoId}`, { method: "GET" });
       const data = await response.json();
       return data.treino || null;
     },
@@ -120,13 +120,13 @@ const FormTreino = ({ onSuccess }: any) => {
         corCalendario: corCalendario,
       };
 
-      const response = id ? await fetch(`/api/treino/${id}`, {
+      const response = id ? await fetch(`/api/letsgo/treino/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(treino),
-      }) : await fetch(`/api/treino`, {
+      }) : await fetch(`/api/letsgo/treino`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -152,7 +152,7 @@ const FormTreino = ({ onSuccess }: any) => {
   const handleRemoveExecucao = async (execucaoId: number) => {
     if (!confirm('Remover essa forma de execução?')) return;
     try {
-      const response = await fetch(`/api/execucaoplanejada/${execucaoId}`, {
+      const response = await fetch(`/api/letsgo/execucaoplanejada/${execucaoId}`, {
         method: "DELETE",
         headers: {
           'Content-Type': 'application/json',
@@ -178,7 +178,7 @@ const FormTreino = ({ onSuccess }: any) => {
   const handleRemoveExercicio = async (exercicio?: ExercicioOption) => {
     if (!confirm('Remover as execuções e o exercício "'+ exercicio?.nome + '" desse treino?' )) return;
     try {
-      const response = await fetch(`/api/execucaoplanejada/exercicio/${exercicio?.id}`, {
+      const response = await fetch(`/api/letsgo/execucaoplanejada/exercicio/${exercicio?.id}`, {
         method: "DELETE",
         headers: {
           'Content-Type': 'application/json',
@@ -211,7 +211,7 @@ const FormTreino = ({ onSuccess }: any) => {
         setSearchTerm(term)
       } else if (term.length >= 2){
         setIsSearching(true)
-        const response = await fetch(`/api/exercicios?search=${term}`)
+        const response = await fetch(`/api/letsgo/exercicios?search=${term}`)
         const data = await response.json()
         setExerciciosOptions(data.exercicios)
       }
@@ -314,7 +314,7 @@ const FormTreino = ({ onSuccess }: any) => {
     } = addExecucaoForm;
 
     try {
-      const response = await fetch('/api/execucaoplanejada', {
+      const response = await fetch('/api/letsgo/execucaoplanejada', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

@@ -16,7 +16,7 @@ model Usuario {
   exercicios   Exercicio[]
   refreshToken RefreshToken?
   treinos      Treino[]
-  premium      Boolean?
+  isBlocked    Boolean? @default(false)
   dtIniPremium DateTime?
   dtFimPremium DateTime?
   updatedAt    DateTime @updatedAt

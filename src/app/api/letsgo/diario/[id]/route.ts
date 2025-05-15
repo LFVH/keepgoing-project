@@ -8,42 +8,33 @@ export async function DELETE(
 ) {
   try {
     const id = parseInt((await  params).id, 10);
-    const userId = await verifyUser(req);
-
+    const userId = await verifyUser();
+    
     if (userId instanceof NextResponse) return userId; 
     if (isNaN(id)) return NextResponse.json({ message: "ID inválido" }, { status: 400 });
 
-    const requestData = await req.json();
+    await prisma.linhasDiario.delete({
+      where: { id,
+        usuarioId: userId,
+       },
+    });
 
-    const treinoId = parseInt(requestData.treinoId)
-    if (isNaN(treinoId)) return NextResponse.json({ message: "inválido" }, { status: 400 });
-
-    await prisma.execucaoPlano.delete({
-      where: {
-        id: id,
-        treino: {
-          id: treinoId,
-          usuarioId: userId
-        }
-      }
-    })
-
-    return NextResponse.json({ message: "Execução excluída com sucesso" });
+    return NextResponse.json({ message: "Registro excluído com sucesso" });
   } catch (error) {
     console.log(error);
     return NextResponse.json(
-      { message: "Erro ao excluir a exec" },
+      { message: "Erro ao excluir" },
       { status: 500 }
     );
   }
 }
-/*
+
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const userId = await verifyUser(req);
+    const userId = await verifyUser();
     if (userId instanceof NextResponse) {
       return userId;} 
 
@@ -53,56 +44,60 @@ export async function GET(
       return NextResponse.json({ message: "ID inválido" }, { status: 400 });
     }
 
-    const treino = await prisma.treino.findUnique({
+    const linha = await prisma.linhasDiario.findUnique({
       where: { id, usuarioId: userId },
       include: {
         execucoes: {
           include: {
             exercicio: {
               select: {
+                id: true,
                 nome: true,
               },
             },
           },
         },
+        treino: true,
       },
     });
 
-    if (!treino) {
-      return NextResponse.json({ message: "Treino não encontrado" }, { status: 404 });
+    if (!linha) {
+      return NextResponse.json({ message: "Registro não encontrado" }, { status: 404 });
     }
 
-    return NextResponse.json({ message: "Treino obtido", treino });
+    return NextResponse.json({ message: "Registro obtido", linha });
   } catch (error) {
     console.error(error);
-    return NextResponse.json({ message: "Erro ao obter treino" }, { status: 500 });
+    return NextResponse.json({ message: "Erro ao obter registro" }, { status: 500 });
   }
 }
-  
 
 export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const userId = await verifyUser(req);
+    const userId = await verifyUser();
     const requestData = await req.json();
     const id = parseInt((await  params).id, 10);
     
     if (userId instanceof NextResponse) return userId; 
-    if (!requestData.nome) return NextResponse.json({ message: "O campo 'nome' é obrigatório" }, { status: 400 });
+    if (!requestData.data) return NextResponse.json({ message: "O campo 'data' é obrigatório" }, { status: 400 });
     if (isNaN(id)) return NextResponse.json({ message: "ID inválido" }, { status: 400 });
     
     const { 
-      nome,
+      data,
+      pesoCorporal,
+      treinoId,
       comentarioGeral,
-      corCalendario,
       } = requestData;
 
-    const treinoDB = await prisma.treino.update({
+    const linhaDiarioDB = await prisma.linhasDiario.update({
       where: { id, usuarioId: userId },
       data: {
-        nome,
+        data: new Date(data),
+        pesoCorporal: pesoCorporal !== undefined ? isNaN(parseFloat(pesoCorporal)) ? null : parseFloat(pesoCorporal) : null,
         comentarioGeral,
-        corCalendario,
-        usuario: { connect: { id: userId } },
+        ...(treinoId !== undefined && !isNaN(parseInt(treinoId)) && {
+          treino: { connect: { id: parseInt(treinoId) } }
+        })
       },
       
     });
@@ -110,16 +105,16 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     return NextResponse.json(
       {
         success: true,
-        message: "Treino atualizado com sucesso.",
-        data: { id: treinoDB.id }
+        message: "Registro atualizado com sucesso.",
+        data: { id: linhaDiarioDB.id }
       },
       { status: 201 }
     );
   } catch (error) {
-    console.error("Erro ao atualizar treino:", error);
+    console.error("Erro ao atualizar registro:", error);
     return NextResponse.json(
       { success: false,  message: "Houve um erro no servidor" },
       { status: 500 }
     );
   }
-}*/
+}

@@ -4,19 +4,18 @@ import { verifyUser } from "@/utils/verifyUserAuth";
 
 // Exemplo de implementação no Next.js API route
 export async function GET(req: NextRequest) {
-  const userId = await verifyUser(req);
+  const userId = await verifyUser();
   if (userId instanceof NextResponse) return userId; // Retorna a resposta de erro caso ocorra
 
   const { searchParams } = new URL(req.url)
   const searchTerm = searchParams.get('search') || ''
 
-  const treinos = await prisma.treino.findMany({
+  const exercicios = await prisma.exercicio.findMany({
     where: {
       nome: {
         contains: searchTerm,
         mode: 'insensitive'
-      },
-      isAtivo: true
+      }
     },
     select: {
       id: true,
@@ -24,5 +23,5 @@ export async function GET(req: NextRequest) {
     }
   })
 
-  return NextResponse.json({ treinos })
+  return NextResponse.json({ exercicios })
 }

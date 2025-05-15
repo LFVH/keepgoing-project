@@ -6,7 +6,7 @@ export async function GET(
   req: NextRequest,
 ) {
   try {
-    const userId = await verifyUser(req);
+    const userId = await verifyUser();
     if (userId instanceof NextResponse) {
       return userId;} 
 
@@ -37,7 +37,7 @@ export async function GET(
 
 export async function POST(req: NextRequest) {
   try {
-    const userId = await verifyUser(req);
+    const userId = await verifyUser();
     const requestData = await req.json();
     
     if (userId instanceof NextResponse) return userId;

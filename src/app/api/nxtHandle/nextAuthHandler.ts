@@ -3,6 +3,7 @@ import prisma from "@/database/prisma"
 import CredentialsProvider from "next-auth/providers/credentials"
 import bcrypt from 'bcryptjs';
 import dayjs from "dayjs"
+import { Usuario } from "@prisma/client";
 
 const AuthHandler :AuthOptions= {
   pages: {
@@ -27,6 +28,9 @@ const AuthHandler :AuthOptions= {
       
         if (!user) {
           throw new Error("Usuário não encontrado.");
+        }
+        if (user.isBlocked) {
+          throw new Error("Código 101");
         }
       
         const passwordMatch = await bcrypt.compare(credentials.password, user.password);
@@ -64,4 +68,6 @@ const AuthHandler :AuthOptions= {
     },
   },
 }
+
+
 export default AuthHandler

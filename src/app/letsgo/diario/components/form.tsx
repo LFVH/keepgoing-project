@@ -96,7 +96,7 @@ const FormDiario = ({ onSuccess }: any) => {
         router.push('/letsgo/diario');
         return null;
       }
-      const response = await fetch(`/api/diario/${registroId}`, { method: "GET" });
+      const response = await fetch(`/api/letsgo/diario/${registroId}`, { method: "GET" });
       const data = await response.json();
       return data.linha || null;
     },
@@ -146,13 +146,13 @@ const FormDiario = ({ onSuccess }: any) => {
         treinoId,
       };
       console.log(diario);
-      const response = id ? await fetch(`/api/diario/${id}`, {
+      const response = id ? await fetch(`/api/letsgo/diario/${id}`, {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify(diario),
-      }) : await fetch(`/api/diario`, {
+      }) : await fetch(`/api/letsgo/diario`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -177,7 +177,7 @@ const FormDiario = ({ onSuccess }: any) => {
 
   const handleRemoveExecucao = async (execucaoId: number) => {
     try {
-      const response = await fetch(`/api/execucaoreal/${execucaoId}`, {
+      const response = await fetch(`/api/letsgo/execucaoreal/${execucaoId}`, {
         method: "DELETE",
         headers: {
           'Content-Type': 'application/json',
@@ -204,7 +204,7 @@ const FormDiario = ({ onSuccess }: any) => {
     const handleRemoveExercicio = async (exercicio?: ExercicioOption) => {
       if (!confirm('Remover as execuções e o exercício "'+ exercicio?.nome + '" desse registro?' )) return;
       try {
-        const response = await fetch(`/api/execucaoreal/exercicio/${exercicio?.id}`, {
+        const response = await fetch(`/api/letsgo/execucaoreal/exercicio/${exercicio?.id}`, {
           method: "DELETE",
           headers: {
             'Content-Type': 'application/json',
@@ -237,7 +237,7 @@ const FormDiario = ({ onSuccess }: any) => {
         setSearchTreinoTerm(term)
       } else if (term.length >= 2){
         setIsSearching(true)
-        const response = await fetch(`/api/treinos?search=${term}`)
+        const response = await fetch(`/api/letsgo/treinos?search=${term}`)
         const responseData = await response.json()
         setTreinosOptions(responseData.treinos)
       }
@@ -257,7 +257,7 @@ const FormDiario = ({ onSuccess }: any) => {
         setSearchTerm(term)
       } else if (term.length >= 2){
         setIsSearching(true)
-        const response = await fetch(`/api/exercicios?search=${term}`)
+        const response = await fetch(`/api/letsgo/exercicios?search=${term}`)
         const responseData = await response.json()
         setExerciciosOptions(responseData.exercicios)
       }
@@ -373,7 +373,7 @@ const FormDiario = ({ onSuccess }: any) => {
     } = addExecucaoForm;
 
     try {
-      const response = await fetch('/api/execucaoreal', {
+      const response = await fetch('/api/letsgo/execucaoreal', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -528,7 +528,7 @@ const FormDiario = ({ onSuccess }: any) => {
         throw new Error('Erro ID 3988672');
       }
       if(shouldOverride){
-        const response = await fetch(`/api/migrarExecucao/${treino.id}`, {
+        const response = await fetch(`/api/letsgo/migrarExecucao/${treino.id}`, {
           method: "PUT",
           headers: {
             "Content-Type": "application/json",

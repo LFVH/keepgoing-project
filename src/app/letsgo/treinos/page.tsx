@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { PlusIcon, CheckIcon, ArchiveBoxIcon, ListBulletIcon } from "@heroicons/react/24/outline";
 import { startTransition, useState } from "react"
 const fetchTreinos = async (ativo?: boolean | null) => {
-  const url = `/api/treino${ativo !== null ? `?ativo=${ativo}` : ''}`;
+  const url = `/api/letsgo/treino${ativo !== null ? `?ativo=${ativo}` : ''}`;
   const response = await fetch(url, { method: "GET" });
   const data = await response.json();
   return data.data || [];
@@ -49,7 +49,7 @@ const Treinos = () => {
   const handleDeleteTreino = (id: string) => {
     toast.promise(
       (async () => {
-        const response = await fetch(`/api/treino/${id}`, { 
+        const response = await fetch(`/api/letsgo/treino/${id}`, { 
           method: "DELETE" 
         });
         
@@ -82,7 +82,7 @@ const Treinos = () => {
   };
   const toggleTreinoStatus = async (treinoId: number, currentStatus: boolean) => {
     try {
-      const response = await fetch(`/api/treino/${treinoId}`, {
+      const response = await fetch(`/api/letsgo/treino/${treinoId}`, {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',

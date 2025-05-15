@@ -7,7 +7,7 @@ export async function PUT(
   { params }: { params: Promise<{ treinoId: string }> }
 ) {
   try {
-    const userId = await verifyUser(req);
+    const userId = await verifyUser();
     const requestData = await req.json();
     const treinoId = parseInt((await  params).treinoId, 10);
     
@@ -30,7 +30,7 @@ export async function PUT(
         },
       });
     if (!treinoDB) {
-      return NextResponse.json({ error: '101 não encontrado' }, { status: 404 });
+      return NextResponse.json({ error: '103 não encontrado' }, { status: 404 });
     }
 
     const linhaDB = await prisma.linhasDiario.findUnique({

@@ -12,7 +12,7 @@ import { Button } from '@/components/ui/button';
 import { startTransition } from "react"
 import { format } from 'date-fns';
 const fetchDiario = async () => {
-    const response = await fetch(`/api/diario`, { method: "GET" });
+    const response = await fetch(`/api/letsgo/diario`, { method: "GET" });
     const data = await response.json();
     return data.data || [];
   };
@@ -46,7 +46,7 @@ const Linhas = () => {
   const handleDeleteTreino = (id: string) => {
     toast.promise(
       (async () => {
-        const response = await fetch(`/api/diario/${id}`, { 
+        const response = await fetch(`/api/letsgo/diario/${id}`, { 
           method: "DELETE" 
         });
         
