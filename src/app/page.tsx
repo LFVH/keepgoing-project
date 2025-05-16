@@ -1,7 +1,9 @@
 import CtaSection from '@/components/CtaSection';
 import { NextPage } from 'next';
+import { useRouter } from 'next/navigation';
 
 const Home: NextPage = () => {
+  const router = useRouter();
   return (
     <>
       <div className="min-h-screen bg-gradient-to-b from-gray-900 to-gray-800 text-white">
@@ -15,10 +17,14 @@ const Home: NextPage = () => {
           </p>
           
           <div className="flex flex-col sm:flex-row justify-center gap-4">
-            <button className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-lg text-lg transition duration-300 transform hover:scale-105">
+            <button 
+              onClick={() => router.push('/checkout')}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-8 rounded-lg text-lg transition duration-300 transform hover:scale-105"
+            >
               Comece Agora - 7 Dias Grátis
             </button>
-            <button className="border-2 border-blue-400 text-blue-400 hover:bg-blue-900/30 font-bold py-4 px-8 rounded-lg text-lg transition duration-300">
+            <button 
+              onClick={() => router.push('/#servicos')} className="border-2 border-blue-400 text-blue-400 hover:bg-blue-900/30 font-bold py-4 px-8 rounded-lg text-lg transition duration-300">
               Conheça os Benefícios
             </button>
           </div>
@@ -109,7 +115,9 @@ const Home: NextPage = () => {
                 Depois, apenas R$19,90/mês. Cancele quando quiser.
               </p>
               
-              <button className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-12 rounded-lg text-lg transition duration-300 transform hover:scale-105">
+              <button 
+              onClick={() => router.push('/checkout')}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-4 px-12 rounded-lg text-lg transition duration-300 transform hover:scale-105">
                 Quero Meu Diário de Treinos
               </button>
               
