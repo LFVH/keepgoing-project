@@ -27,8 +27,8 @@ export default function Header() {
           {isLoggedIn ? (
             <>
             <Link href="/letsgo" className="hover:text-blue-400 transition">Início</Link>
-            <Link href="/diario" className="hover:text-blue-400 transition">Meu Diário</Link>
-            <Link href="/treinos" className="hover:text-blue-400 transition">Plano de Treinos</Link>
+            <Link href="/letsgo/diario" className="hover:text-blue-400 transition">Meu Diário</Link>
+            <Link href="/letsgo/treinos" className="hover:text-blue-400 transition">Plano de Treinos</Link>
             </>
           ) : (
             <>
@@ -45,7 +45,7 @@ export default function Header() {
             <>
               <div className="hidden md:flex items-center space-x-4">
                 <Link 
-                  href="/diario" 
+                  href="/letsgo/diario" 
                   className="flex items-center space-x-2 hover:text-blue-400"
                 >
                   <div className="h-8 w-8 rounded-full bg-gray-700 flex items-center justify-center">
@@ -92,7 +92,7 @@ export default function Header() {
         {isLoggedIn ? (
           <>
             <Link href="/letsgo" className="block py-2 border-b border-gray-800">Meu Diário</Link>
-            <Link href="/treinos" className="block py-2 border-b border-gray-800">Treinos</Link>
+            <Link href="/letsgo/treinos" className="block py-2 border-b border-gray-800">Treinos</Link>
             <Link href="/letsgo" className="block py-2 border-b border-gray-800">Perfil</Link>
             <button 
               onClick={() => signOut({ callbackUrl: "/" })}

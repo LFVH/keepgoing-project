@@ -77,7 +77,6 @@ const FormTreino = ({ onSuccess }: any) => {
     queryKey: ['treino', treinoId],
     enabled: !!treinoId,
     queryFn: async () => {
-      console.log("get maroto")
       const response = await fetch(`/api/letsgo/treino/${treinoId}`, { method: "GET" });
       const data = await response.json();
       return data.treino || null;

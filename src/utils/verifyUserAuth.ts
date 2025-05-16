@@ -1,9 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { getServerSession } from "next-auth";
 import authHandler from "@/app/api/nxtHandle/nextAuthHandler";
 import prisma from "@/database/prisma";
 import { Usuario } from "@prisma/client";
-import { getToken } from "next-auth/jwt";
+import { logNow } from "./Logging";
 
 export async function verifyUser() {
   try {
@@ -17,7 +17,6 @@ export async function verifyUser() {
   
     const userId = session.id;
   
-    // Verifica se o usuário existe no banco de dados
     const userExists = await prisma.usuario.findUnique({
       where: { id: userId },
     });
@@ -34,6 +33,33 @@ export async function verifyUser() {
     return userId; // Retorna o ID do usuário para ser usado nas rotas
   } catch (error) {
     console.log(error);
+    return NextResponse.json(
+      { success: false, body: { message: error instanceof Error ? error.message : 'Ocorreu um erro!' } },
+      { status: 400 }
+    );
+  }
+}
+
+export async function verifyUserMw(userId: string) {
+  try {
+    console.log("entrou aqui");
+    // Verifica se o usuário existe no banco de dados
+    const userExists = await prisma.usuario.findUnique({
+      where: { id: userId },
+    });
+  
+    if (!userExists || !userId) {
+      return NextResponse.json(
+        { success: false, body: { message: "Usuário não encontrado." } },
+        { status: 400 }
+      );
+    }
+  
+    checkPremiumExpiration(userExists);
+  
+    return userId
+  } catch (error) {
+    console.error('verifyUserMw error:', error)
     return NextResponse.json(
       { success: false, body: { message: error instanceof Error ? error.message : 'Ocorreu um erro!' } },
       { status: 400 }
