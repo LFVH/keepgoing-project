@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/database/prisma";
-import { verifyUser } from "@/utils/verifyUserAuth";
+import { userExists, verifyUser } from "@/utils/verifyUserAuth";
 
 export async function PUT(req: NextRequest) {
   try {
-    const userId = await verifyUser();
+    const userDB = await userExists();
     const requestData = await req.json();
     
-    if (userId instanceof NextResponse) return userId; 
-    if (!requestData.nome) return NextResponse.json({ message: "O campo 'nome' é obrigatório" }, { status: 400 });
+    if (userDB instanceof NextResponse) return userDB; 
+    //if (!requestData.nome) return NextResponse.json({ message: "O campo 'nome' é obrigatório" }, { status: 400 });
     
     const { 
       nome,
@@ -17,11 +17,11 @@ export async function PUT(req: NextRequest) {
       } = requestData;
     const dataAtual = new Date(); // Data atual
     const dataFimPremium = new Date();
-    dataFimPremium.setDate(dataAtual.getDate() + 7); // Adiciona 7 dias
+    dataFimPremium.setDate(dataAtual.getDate() + 36500); // Adiciona 7 dias
 
 
     const usuarioDB = await prisma.usuario.update({
-      where: { id: userId },
+      where: { id: userDB.id },
       data: {
         dtFimPremium: dataFimPremium,
         dtIniPremium: dataAtual

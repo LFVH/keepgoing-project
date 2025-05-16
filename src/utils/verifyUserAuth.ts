@@ -7,7 +7,23 @@ import { logNow } from "./Logging";
 
 export async function verifyUser() {
   try {
-    const session = await getServerSession(authHandler);
+    const userDB = await userExists();
+    if(userDB instanceof NextResponse) return userDB;
+  
+    const userId = checkPremiumExpiration(userDB);
+  
+    return userId; // Retorna o ID do usuário para ser usado nas rotas
+  } catch (error) {
+    console.log(error);
+    return NextResponse.json(
+      { success: false, body: { message: error instanceof Error ? error.message : 'Ocorreu um erro!' } },
+      { status: 400 }
+    );
+  }
+}
+
+export async function userExists(): Promise<Usuario | NextResponse>  {
+  const session = await getServerSession(authHandler);
     if (!session || !session.id) {
       return NextResponse.json(
         { success: false, body: { message: "Usuário não autenticado." } },
@@ -27,47 +43,10 @@ export async function verifyUser() {
         { status: 400 }
       );
     }
-  
-    checkPremiumExpiration(userExists);
-  
-    return userId; // Retorna o ID do usuário para ser usado nas rotas
-  } catch (error) {
-    console.log(error);
-    return NextResponse.json(
-      { success: false, body: { message: error instanceof Error ? error.message : 'Ocorreu um erro!' } },
-      { status: 400 }
-    );
-  }
+    return userExists;
 }
 
-export async function verifyUserMw(userId: string) {
-  try {
-    console.log("entrou aqui");
-    // Verifica se o usuário existe no banco de dados
-    const userExists = await prisma.usuario.findUnique({
-      where: { id: userId },
-    });
-  
-    if (!userExists || !userId) {
-      return NextResponse.json(
-        { success: false, body: { message: "Usuário não encontrado." } },
-        { status: 400 }
-      );
-    }
-  
-    checkPremiumExpiration(userExists);
-  
-    return userId
-  } catch (error) {
-    console.error('verifyUserMw error:', error)
-    return NextResponse.json(
-      { success: false, body: { message: error instanceof Error ? error.message : 'Ocorreu um erro!' } },
-      { status: 400 }
-    );
-  }
-}
-
-function checkPremiumExpiration(user: Usuario ): void {
+function checkPremiumExpiration(user: Usuario ) {
   // Get current date (without time component)
   const currentDate = new Date();
   currentDate.setHours(0, 0, 0, 0);
@@ -88,4 +67,5 @@ function checkPremiumExpiration(user: Usuario ): void {
   if (currentDate < dtIni || currentDate > dtFim) {
       throw new Error("101 - 2");
   }
+  return user.id;
 }
