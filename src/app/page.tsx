@@ -1,3 +1,4 @@
+'use client'
 import CtaSection from '@/components/CtaSection';
 import { NextPage } from 'next';
 import { useRouter } from 'next/navigation';

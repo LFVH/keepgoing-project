@@ -16,7 +16,8 @@ export async function GET(req: NextRequest) {
         contains: searchTerm,
         mode: 'insensitive'
       },
-      isAtivo: true
+      isAtivo: true,
+      usuarioId: userId
     },
     select: {
       id: true,

@@ -6,6 +6,7 @@ import { useForm } from "react-hook-form"
 import { useQuery } from "@tanstack/react-query"
 import { useRouter, useSearchParams } from "next/navigation"
 import { unstable_cacheLife } from "next/cache"
+import { logNow } from "@/utils/Logging"
 
 export interface IForm {
   id?: string,
@@ -33,6 +34,7 @@ interface AddExecucaoForm {
   minutos: number | null     
   segundos: number | null
   tempo: number | null
+  percepcao: number | null
 }
 
 
@@ -42,7 +44,7 @@ interface Execucao {
   sets: number,
   carga: number,
   tempo: number,
-  percepcao: string,
+  percepcao: number,
   exercicio: {
     id: number,
     nome: string
@@ -68,7 +70,6 @@ const FormDiario = ({ onSuccess }: any) => {
   const [isSearching, setIsSearching] = useState(false)
   const [isEditing, setIsEditing] = useState(false);
   const [isAddExecucaoOpen, setIsAddExecucaoOpen] = useState(false) ;
-  //const [exerciciosVazios, setExerciciosVazios] = useState<number[]>([]);
   const [exerciciosOptions, setExerciciosOptions] = useState<ExercicioOption[]>([])
   const [treinosOptions, setTreinosOptions] = useState<ExercicioOption[]>([])
   const [searchTerm, setSearchTerm] = useState('')
@@ -84,9 +85,11 @@ const FormDiario = ({ onSuccess }: any) => {
     minutos: 0,
     segundos: 0,
     tempo: null, 
+    percepcao: null,
   })
   const searchParams = useSearchParams()
   const registroId = searchParams.get("registro")
+  const dataSelecionada = searchParams.get("registrarDia")
   const { data: linha, isSuccess, isLoading,isError, refetch } = useQuery<LinhaComExecucoes>({
     refetchOnWindowFocus: false,
     queryKey: ['diario', registroId],
@@ -103,7 +106,8 @@ const FormDiario = ({ onSuccess }: any) => {
   })
   const { register, handleSubmit, setValue, reset, getValues,formState: { errors },watch  } = useForm<IForm>({
     defaultValues: {
-      data: new Date().toISOString().slice(0, 16) 
+      data: (dataSelecionada 
+          ? new Date(dataSelecionada).toISOString().slice(0, 16) : new Date().toISOString().slice(0, 16))
     }
   });
 
@@ -269,28 +273,26 @@ const FormDiario = ({ onSuccess }: any) => {
   }
 
   const handleOpenAddExecucao = async (exercicio?: ExercicioOption) => {
-    if (!registroId) {
-      try {
-        const response = await saveLinha(getValues());
-        if (!response || !response.data?.id) {
-          console.log("Falha ao salvar o registro");
-          return;
-        }
-    
-        await router.push(
-          `?editar-diario=open&registro=${response.data.id}&fastaddexec=true`,
-          { scroll: false }
-        );
-      } catch (error) {
-        console.log("Erro durante o submit:", error);
-      } finally {
-        console.log("Finalizado o processo");
+    try {
+      const response = await saveLinha(getValues());
+      if (!response || !response.data?.id) {
+        logNow("Falha ao salvar o registro");
+        return;
       }
-    
-      return;
-    }
+      if (!registroId) {
+      
+          router.push(
+            `?editar-diario=open&registro=${response.data.id}&fastaddexec=true`,
+            { scroll: false }
+          );
+      }
+    } catch (error) {
+      logNow("Erro durante o submit:")
+      console.log(error);
+    }   
     await fetchExercicios('',exercicio)
     setIsAddExecucaoOpen(true)
+    return;
   }
 
   const handleCloseAddExecucao = () => {
@@ -315,6 +317,7 @@ const FormDiario = ({ onSuccess }: any) => {
       minutos: null,
       segundos: null,
       tempo: null,
+      percepcao: null,
     })
     setSearchTerm('')
     setSelectedExercicio(null);
@@ -362,7 +365,7 @@ const FormDiario = ({ onSuccess }: any) => {
     if (!addExecucaoForm.exercicioId) {
       toast.error('Selecione um exercício')
       return
-    }""
+    }
 
     const {
       reps = parseInt(addExecucaoForm.reps ? addExecucaoForm.reps : ''),
@@ -370,6 +373,7 @@ const FormDiario = ({ onSuccess }: any) => {
       carga = parseFloat(addExecucaoForm.carga ? addExecucaoForm.carga : ''),
       comentarioExec = addExecucaoForm.comentarioExec || "",
       tempo = addExecucaoForm.tempo,
+      percepcao = addExecucaoForm.percepcao
     } = addExecucaoForm;
 
     try {
@@ -386,14 +390,16 @@ const FormDiario = ({ onSuccess }: any) => {
           carga: carga,
           comentarioExecucao: comentarioExec,
           tempo: tempo,
-          //isEmpty: (exerciciosVazios.includes(addExecucaoForm.exercicioId))
+          percepcao: percepcao,
           //ordem: nrOrdem,
         }),
       })
 
       if (!response.ok) { 
         console.log("(!response.ok)");
+        console.log(response.body);
         toast.error('Falha ao adicionar execução')
+        return;
       }
 
       toast.success('Execução adicionada com sucesso')
@@ -486,7 +492,7 @@ const FormDiario = ({ onSuccess }: any) => {
         (!execucao.sets || execucao.sets === 0) &&
         (!execucao.comentarioExecucao || execucao.comentarioExecucao.trim() === "") &&
         (!execucao.tempo || execucao.tempo === 0) &&
-        (!execucao.percepcao || execucao.percepcao.trim() === "");
+        (!execucao.percepcao || execucao.percepcao === 0);
   
       // Se NÃO estiverem todos vazios (ou seja, se pelo menos um campo tem valor válido)
       const exercicioId = execucao.exercicio.id;
@@ -509,7 +515,7 @@ const FormDiario = ({ onSuccess }: any) => {
 
   const handleTreinoClick = async (treino: TreinoOption) => {
 
-    const shouldOverride = confirm('Deseja sobrescrever todos os exercicios/execucões pelos do treino selecionado?');
+    const shouldOverride = (linha?.execucoes) ? confirm('Deseja sobrescrever todos os exercicios/execucões pelos do treino selecionado?') : true;
    
     setSelectedTreino(treino);
     setValue("treinoId", treino.id);
@@ -557,49 +563,81 @@ const FormDiario = ({ onSuccess }: any) => {
         <div className="space-y-4">
           <div>
             {/* Seletor de Treino */}
-            <div className="relative">
-            <label className="block text-sm font-medium text-gray-700 mb-1">Treino*</label>
-            <input
-              type="text"
-              placeholder="Buscar treinos..."
-              value={selectedTreino ? selectedTreino.nome : searchTreinoTerm}
-              onChange={(e) => {
-                if (selectedTreino && e.target.value !== selectedTreino.nome) {
-                  setSelectedTreino(null);
-                  setValue("treinoId", null);
-                }
-                handleSearchTreinos(e.target.value);
-              }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md"
-            />
+            <div>
+  {/* Seletor de Treino com opção de criar novo */}
+  <div className="relative">
+    <label className="block text-sm font-medium text-gray-700 mb-1">Treino*</label>
+    <input
+      type="text"
+      placeholder="Buscar treinos ou digite um novo..."
+      value={selectedTreino ? selectedTreino.nome : searchTreinoTerm}
+      onChange={(e) => {
+        if (selectedTreino && e.target.value !== selectedTreino.nome) {
+          setSelectedTreino(null);
+          setValue("treinoId", null);
+        }
+        handleSearchTreinos(e.target.value);
+      }}
+      className="w-full px-3 py-2 border border-gray-300 rounded-md"
+    />
 
-            {isSearching && <div className="text-sm text-gray-500">Buscando...</div>}
-            
-            {!selectedTreino && searchTreinoTerm && (
-                <div className="
-                absolute          // Posiciona sobre outros elementos
-                z-50              // Garante que fique acima de tudo
-                w-full           // Largura igual ao input
-                mt-1             // Espaço do input
-                max-h-40          // Altura máxima
-                overflow-y-auto  // Rolagem automática
-                bg-white          // Fundo branco
-                border           // Borda
-                rounded-md       // Cantos arredondados
-                shadow-lg        // Sombra para efeito de elevação
-              ">
-                  {treinosOptions.map(treino => (
-                    <div
-                      key={treino.id}
-                      className={`p-2 hover:bg-gray-100 cursor-pointer ${currentTreinoId  === treino.id ? 'bg-blue-100' : ''}`}
-                      onClick={() => handleTreinoClick(treino)}
-                    >
-                      {treino.nome}
-                    </div>
-                  ))}
-                </div>
-            )}
-            </div>
+    {isSearching && <div className="text-sm text-gray-500">Buscando...</div>}
+    
+    {!selectedTreino && searchTreinoTerm && (
+      <div className="
+        absolute
+        z-50
+        w-full
+        mt-1
+        max-h-40
+        overflow-y-auto
+        bg-white
+        border
+        rounded-md
+        shadow-lg
+      ">
+        {/* Opções existentes */}
+        {treinosOptions.map(treino => (
+          <div
+            key={treino.id}
+            className={`p-2 hover:bg-gray-100 cursor-pointer ${currentTreinoId === treino.id ? 'bg-blue-100' : ''}`}
+            onClick={() => handleTreinoClick(treino)}
+          >
+            {treino.nome}
+          </div>
+        ))}
+        
+        <div
+          className="p-2 hover:bg-gray-100 cursor-pointer text-blue-600 font-medium border-t"
+          onClick={async () => {
+            try {
+              const response = await fetch(`/api/letsgo/treino`, {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({nome: searchTreinoTerm}),
+              });
+              if (!response.ok) {
+                toast.error("Erro ao criar treino");
+                return response.json.toString;
+              }
+              
+              const newTreino = (await response.json()).data;
+              setSelectedTreino(newTreino);
+              setValue("treinoId", newTreino.id);
+              setSearchTreinoTerm('');
+            } catch (error) {
+              console.error("Erro ao criar treino:", error);
+            }
+          }}
+        >
+          + Criar novo treino "{searchTreinoTerm}"
+        </div>
+      </div>
+    )}
+  </div>
+</div>
             <div>
               <label htmlFor="data" className="block text-sm font-medium text-gray-700 mb-1">
                 Data do Registro *
@@ -711,6 +749,9 @@ const FormDiario = ({ onSuccess }: any) => {
                         Tempo
                       </th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                        Percepção esforço
+                      </th>
+                      <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Comentário
                       </th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -735,6 +776,9 @@ const FormDiario = ({ onSuccess }: any) => {
                           `${Math.floor(execucao.tempo / 60).toString().padStart(2, '0')}:${(execucao.tempo % 60).toString().padStart(2, '0')}`
                           : '--:--' /* ou '00:00' se preferir */
                         }
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {execucao.percepcao}
                         </td>
                         <td className="px-6 py-4 text-sm text-gray-500">
                           {execucao.comentarioExecucao || '-'}
@@ -891,6 +935,18 @@ const FormDiario = ({ onSuccess }: any) => {
                     step="0.10"
                     value={addExecucaoForm.carga}
                     onChange={(e) => setAddExecucaoForm(prev => ({ ...prev, carga: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Percepção de Esforço (1 = muito fácil)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    max="10"
+                    step="1"
+                    value={addExecucaoForm.percepcao ?? ''}
+                    onChange={(e) => setAddExecucaoForm(prev => ({ ...prev, percepcao: e.target.value === '' ? null : parseInt(e.target.value) || 0 }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md"
                   />
                 </div>

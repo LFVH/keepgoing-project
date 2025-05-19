@@ -40,7 +40,7 @@ const Treinos = () => {
   if (isLoading || isFetching) {
     return <Loader/>;
   }
-  
+
   if (isError) {
     console.error("Erro ao buscar treinos:", error);
     return <p>Erro ao carregar dados</p>;
@@ -184,10 +184,15 @@ const Treinos = () => {
     <CreateTreino onSuccess={handleSuccess}/>
   )}
 
+
   {editEventModal && (
     <EditTreino onSuccess={handleSuccess}/>
   )}
 
+  {(treinos.length === 0) && (
+    <div className="text-center">Seus treinos aparecerão aqui (↓↑)</div>
+  )}
+  
   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
     {isSuccess && treinos &&
       treinos.map((treino: any) => {

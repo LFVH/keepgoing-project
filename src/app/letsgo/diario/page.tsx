@@ -11,6 +11,7 @@ import EditLinhaDiario from "./components/update-diario"
 import { Button } from '@/components/ui/button';
 import { startTransition } from "react"
 import { format } from 'date-fns';
+import PlusIcon from "@heroicons/react/24/outline/PlusIcon"
 const fetchDiario = async () => {
     const response = await fetch(`/api/letsgo/diario`, { method: "GET" });
     const data = await response.json();
@@ -67,8 +68,8 @@ const Linhas = () => {
       }
     );
   }
-  const isCreateTreinoModalOpen = searchParams.get("boa-segue-firme") === "open"
-  const editEventModal =
+  const isCreateDiarioModalOpen = searchParams.get("boa-segue-firme") === "open"
+  const editDiarioModal =
     searchParams.get("editar-diario") === "open" &&
     searchParams.get("registro")?.trim() !== ""
 
@@ -80,105 +81,115 @@ const Linhas = () => {
   return (  
     
     <div className="p-4 max-w-4xl mx-auto">
+    {/* Header Buttons */}
+    <div className="flex justify-between items-center">
       <Button 
         title="Voltar ao início" 
         onClick={() => router.push("/letsgo")}
-        className="bg-black hover:bg-gray-800 text-white px-4 py-2 rounded"
+        className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md shadow transition-colors duration-200"
       >
         Voltar ao início
       </Button>
+      
       <div className="mb-4">
-        {isCreateTreinoModalOpen || editEventModal ? (
+        {isCreateDiarioModalOpen || editDiarioModal ? (
           <Button 
             title="Voltar" 
             onClick={() => router.push("?")}
-            className="bg-gray-500 hover:bg-gray-600 text-white px-4 py-2 rounded"
+            className="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded-md shadow transition-colors duration-200"
           >
             Voltar
           </Button>
         ) : (
           <Button
             title="Adicionar"
-            onClick={() => router.push("?boa-segue-firme=open")}
-            className="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded"
+            onClick={() => { router.push("?boa-segue-firme=open");}}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md shadow transition-colors duration-200"
           >
+            <PlusIcon className="mr-2 h-4 w-4" />
             Adicionar
           </Button>
         )}
       </div>
-
-      {isCreateTreinoModalOpen && (
+    </div>
+    {(linhas.length === 0) && (
+      <div className="text-center">Seus treinos registrados aparecerão aqui (↓↑)</div>
+    )}
+      {isCreateDiarioModalOpen && (
         <CreateLinhaDiario onSuccess={handleSuccess}/>
       )}
 
-      {editEventModal && (
+      {editDiarioModal && (
         <EditLinhaDiario onSuccess={handleSuccess}/>
       )}
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-        {isSuccess && linhas &&
-          linhas.map((linha: any) => {
-            return (
-              <div 
-                key={linha.id}  
-                className="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition-shadow duration-200 relative"
-              >
-                <Panel eventKey={linha.id} header="" className="border rounded-lg shadow-sm hover:shadow-md transition-shadow">
-                <div className="flex flex-col h-full p-4">
-                  <div className="flex items-start space-x-3">
-                    {/* Quadrado com a cor do treino */}
-                    <div 
-                      className="w-5 h-5 rounded-sm flex-shrink-0 mt-1" 
-                      style={{ backgroundColor: linha?.treino?.corCalendario || '#cccccc' }}
-                    />
-                    
-                    <div className="flex-grow flex flex-col">
-                      <div className="flex flex-col gap-1"> {/* Adicionei `flex-col` e `gap-1` para espaçamento */}
-                        <span className="text-base font-semibold text-gray-800">
-                          {format(new Date(linha?.data), 'dd/MM/yyyy HH:mm')}
-                        </span>
-                        <span className="text-lg font-semibold text-black">
-                          {linha?.treino?.nome || '------'} 
-                        </span>
-                      </div>
-                      
-                      <div className="flex justify-between items-end mt-1">
-                        {/* Comentário geral truncado */}
-                        <div className="flex-grow pr-4">
-                          {linha?.comentarioGeral && (
-                            <p className="text-gray-600 text-sm">
-                              {linha.comentarioGeral.length > 60 
-                                ? `${linha.comentarioGeral.substring(0, 60)}...` 
-                                : linha.comentarioGeral}
-                            </p>
-                          )}
-                        </div>
-                        
-                        {/* Botões alinhados à direita */}
-                        <div className="flex space-x-2">
-                          <button
-                            onClick={() => router.push(`?editar-diario=open&registro=${linha.id}`)}
-                            className="text-blue-500 hover:text-blue-700 p-1 rounded-full hover:bg-blue-50 transition-colors"
-                            title="Editar"
-                          >
-                            <LuPencil className="w-5 h-5" />
-                          </button>
-                          <button
-                            onClick={() => handleDeleteTreino(linha.id)}
-                            className="text-red-500 hover:text-red-700 p-1 rounded-full hover:bg-red-50 transition-colors"
-                            title="Excluir"
-                          >
-                            <FaTrashAlt className="w-5 h-5" />
-                          </button>
-                        </div>
-                      </div>
+        {isSuccess && linhas && (
+  <div className="space-y-2">
+    {Object.entries(
+      linhas.reduce((acc: Record<string, typeof linhas[0][]>, linha: any) => {
+        const dateKey = format(new Date(linha.data), 'dd/MM/yyyy');
+        if (!acc[dateKey]) acc[dateKey] = [];
+        acc[dateKey].push(linha);
+        return acc;
+      }, {} as Record<string, typeof linhas[0][]>)
+    ).map(([date, dayLines]) => (
+      <div key={date} className="w-full">
+        {/* Linha da data */}
+        <div className="text-sm font-medium text-gray-600 mb-1 ml-1">{date}</div>
+        
+        {/* Container dos itens - agora com wrap */}
+        <div className="flex flex-row gap-2 w-full">
+          {(dayLines as typeof linhas[0][]).map((linha) => (
+            <div 
+              key={linha.id} 
+              className="flex-1 min-w-[200px] max-w-[300px] border rounded-md p-2 hover:bg-gray-50 transition-colors"
+            >
+              <div className="flex items-start gap-2 h-full">
+                <div 
+                  className="w-3 h-3 rounded-sm mt-1 flex-shrink-0" 
+                  style={{ backgroundColor: linha?.treino?.corCalendario || '#cccccc' }}
+                />
+                
+                <div className="flex-1 overflow-hidden">
+                  <div className="flex justify-between items-start">
+                    <span className="text-xs text-gray-500">
+                      {format(new Date(linha.data), 'HH:mm')}
+                    </span>
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() => router.push(`?editar-diario=open&registro=${linha.id}`)}
+                        className="text-gray-400 hover:text-blue-500 p-0.5"
+                      >
+                        <LuPencil className="w-3 h-3" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteTreino(linha.id)}
+                        className="text-gray-400 hover:text-red-500 p-0.5"
+                      >
+                        <FaTrashAlt className="w-3 h-3" />
+                      </button>
                     </div>
                   </div>
+                  
+                  <p className="font-medium text-sm mt-0.5 truncate">
+                    {linha?.treino?.nome || '------'}
+                  </p>
+                  
+                  {linha?.comentarioGeral && (
+                    <p className="text-xs text-gray-600 mt-1 truncate">
+                      {linha.comentarioGeral}
+                    </p>
+                  )}
                 </div>
-              </Panel>
               </div>
-            )
-          })}
+            </div>
+          ))}
+        </div>
+      </div>
+    ))}
+  </div>
+)}
       </div>
     </div>
   )

@@ -1,44 +1,70 @@
 'use client'
+import CalendarioTreinos from '@/components/Calendario';
 import { Button } from '@/components/ui/button';
 import { LogOutIcon } from '@/components/ui/icons';
+import { useQuery } from '@tanstack/react-query';
 import { signOut } from 'next-auth/react';
 import Link from 'next/link';
-
+import { Loader } from 'rsuite';
+const fetchDiario = async () => {
+    const response = await fetch(`/api/letsgo/diario`, { method: "GET" });
+    const data = await response.json();
+    return data.data || [];
+  };
 export default function Page() {
+    const { 
+    data: linhas,
+    isLoading,
+    isSuccess,
+    refetch,
+    isFetching,
+    isError, 
+    error,
+   } = useQuery({
+    queryKey: ["getTreinosUsuario"],
+    initialData: [],
+    queryFn: () => fetchDiario(),
+  })
+
+  if (isLoading || isFetching) {
+    return <Loader/>;
+  }
+  
+  if (isError) {
+    console.error("Erro ao buscar em /diario:", error);
+    return <p>Erro ao carregar dados</p>;
+  }
+
   return (
     <div className="grid gap-4 md:gap-8">
-          <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-            <main className="flex flex-col gap-8 row-start-2 items-center sm:items-start">
-             <Button asChild title="Registrar treino feito!" variant="treino" size="treino" >
-                <Link href="/letsgo/diario?boa-segue-firme=open">
-                Registrar Treino Realizado
-                </Link>
-             </Button>
-              <Button asChild title="Histórico de treinos já realizados" variant="treino" size="treino" >
-                <Link href="/letsgo/diario">
-                   Histórico treinos realizados
-                </Link>
-              </Button>
-              <Button asChild title="Ver, Adicionar ou Remover treinos pre cadastrados" variant="treino" size="treino" >
-                <Link href="/letsgo/treinos">
-                  Plano de treinos
-                </Link>
-              </Button>
-            </main>
-            <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
-              <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-      
-                  Parabéns! Treine, registre, avance!
-      
-              </ol>
-              <button
-                onClick={() => signOut({ callbackUrl: "/" })}
-                className="left-4 bottom-4 flex items-center gap-2 p-2 text-white bg-red-500 rounded-md hover:bg-red-600 transition"
-              > 
-                <LogOutIcon className="w-5 h-5" /> Sair
-              </button>
-            </footer>
-          </div>
+      <div>
+        <h1 className="text-center text-2xl font-bold mb-4">Meu Calendário de Treinos</h1>
+        <CalendarioTreinos linhasDiario={linhas} />
+      </div>
+      <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-4 sm:p-20 font-[family-name:var(--font-geist-sans)]">
+        <main className="flex flex-col gap-8 row-start-2 items-center justify-start h-full">
+          <Button asChild title="Registrar treino feito!" variant="treino" size="treino" >
+            <Link href="/letsgo/diario?boa-segue-firme=open">
+            Registrar Treino Realizado
+            </Link>
+          </Button>
+          <Button asChild title="Histórico de treinos já realizados" variant="treino" size="treino" >
+            <Link href="/letsgo/diario">
+                Histórico - treinos realizados
+            </Link>
+          </Button>
+          <Button asChild title="Ver, Adicionar ou Remover treinos pre cadastrados" variant="treino" size="treino" >
+            <Link href="/letsgo/treinos">
+              Plano de treinos
+            </Link>
+          </Button>
+        </main>
+        <footer className="row-start-3 flex gap-6 flex-wrap items-center justify-center">
+          <ol className="list-inside list-decimal text-sm text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
+              Parabéns! Treine, registre, avance!
+          </ol>
+        </footer>
+      </div>
     </div>
   );
 }

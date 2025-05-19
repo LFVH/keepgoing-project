@@ -14,6 +14,7 @@ export async function verifyUser() {
   
     return userId; // Retorna o ID do usuário para ser usado nas rotas
   } catch (error) {
+    logNow("verifyUser");
     console.log(error);
     return NextResponse.json(
       { success: false, body: { message: error instanceof Error ? error.message : 'Ocorreu um erro!' } },

@@ -5,16 +5,16 @@ import { userExists, verifyUser } from "@/utils/verifyUserAuth";
 export async function PUT(req: NextRequest) {
   try {
     const userDB = await userExists();
-    const requestData = await req.json();
+    //const requestData = await req.json();
     
     if (userDB instanceof NextResponse) return userDB; 
     //if (!requestData.nome) return NextResponse.json({ message: "O campo 'nome' é obrigatório" }, { status: 400 });
     
-    const { 
-      nome,
-      comentarioGeral,
-      corCalendario,
-      } = requestData;
+    // const { 
+    //  nome,
+    //  comentarioGeral,
+    //  corCalendario,
+    //  } = requestData;
     const dataAtual = new Date(); // Data atual
     const dataFimPremium = new Date();
     dataFimPremium.setDate(dataAtual.getDate() + 36500); // Adiciona 7 dias

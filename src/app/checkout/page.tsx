@@ -5,8 +5,9 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { SignupForm } from '../signup/form';
+import { NextPage } from 'next';
 
-export function CheckoutPage() {
+export default function CheckoutPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -22,7 +23,7 @@ export function CheckoutPage() {
     
     setIsProcessing(true);
     try {
-      const response = await fetch('/api/letsgo/pagamentorecebido', {
+      const response = await fetch('/api/pagamentorecebido', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json'

@@ -47,8 +47,8 @@ model Exercicio {
 model Treino {
   id              Int      @id @default(autoincrement())
   nome            String
-  comentarioGeral String?
-  corCalendario   String?   
+  comentarioGeral String
+  corCalendario   String?  @default("#00FFFF")
   linhasDiario    LinhasDiario[]
   execucoes       ExecucaoPlano[]
   usuario         Usuario  @relation(fields: [usuarioId], references: [id])
@@ -98,7 +98,7 @@ model ExecucaoReal {
   tempo               Int?
   ordem               Int?
   comentarioExecucao  String?
-  percepcao           String?
+  percepcao           Int?
   exercicio           Exercicio @relation(fields: [exercicioId], references: [id])
   exercicioId         Int
   diario              LinhasDiario @relation(fields: [diarioId], references: [id],onDelete: Cascade)

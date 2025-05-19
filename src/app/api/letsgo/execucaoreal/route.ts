@@ -56,10 +56,10 @@ export async function POST(req: NextRequest) {
 
   if (!execucaoInsert.diarioId || !execucaoInsert.exercicioId) throw new Error("Missing fields.");
 
-  if(!(await prisma.treino.findUnique({
+  if(!(await prisma.linhasDiario.findUnique({
     where: { id: execucaoInsert.diarioId, usuarioId: userId },
     select: { id: true }
-  }))) throw new Error("Treino não encontrado.");
+  }))) throw new Error("Diario não encontrado.");
   
     const execucaoDB = await prisma.execucaoReal.create({
       data: { reps: execucaoInsert.reps ,             
@@ -82,7 +82,7 @@ export async function POST(req: NextRequest) {
             { OR: [{ sets: 0 }, { sets: null }] },
             { OR: [{ comentarioExecucao: "" }, { comentarioExecucao: null }] },
             { OR: [{ tempo: 0 }, { tempo: null }] },
-            { OR: [{ percepcao: "" }, { percepcao: null }] },
+            { OR: [{ percepcao: 0 }, { percepcao: null }] },
             { exercicioId: exercicioId },
             { 
               diario: {

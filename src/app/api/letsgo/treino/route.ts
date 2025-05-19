@@ -59,7 +59,7 @@ export async function POST(req: NextRequest) {
       {
         success: true,
         message: "Treino criado com sucesso.",
-        data: { id: treinoDB.id }
+        data: { id: treinoDB.id, nome: treinoDB.nome }
       },
       { status: 201 }
     );
