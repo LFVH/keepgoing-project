@@ -1,9 +1,7 @@
 'use client'
 import CalendarioTreinos from '@/components/Calendario';
 import { Button } from '@/components/ui/button';
-import { LogOutIcon } from '@/components/ui/icons';
 import { useQuery } from '@tanstack/react-query';
-import { signOut } from 'next-auth/react';
 import Link from 'next/link';
 import { Loader } from 'rsuite';
 const fetchDiario = async () => {

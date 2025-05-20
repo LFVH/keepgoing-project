@@ -47,7 +47,7 @@ model Exercicio {
 model Treino {
   id              Int      @id @default(autoincrement())
   nome            String
-  comentarioGeral String
+  comentarioGeral String?
   corCalendario   String?  @default("#00FFFF")
   linhasDiario    LinhasDiario[]
   execucoes       ExecucaoPlano[]
