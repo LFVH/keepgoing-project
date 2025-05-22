@@ -112,9 +112,7 @@ const Linhas = () => {
         )}
       </div>
     </div>
-    {(linhas.length === 0) && (
-      <div className="text-center">Seus treinos registrados aparecerão aqui (↓↑)</div>
-    )}
+
       {isCreateDiarioModalOpen && (
         <CreateLinhaDiario onSuccess={handleSuccess}/>
       )}
@@ -122,7 +120,9 @@ const Linhas = () => {
       {editDiarioModal && (
         <EditLinhaDiario onSuccess={handleSuccess}/>
       )}
-
+    {(linhas.length === 0) && (
+      <div className="text-center">Seus treinos registrados aparecerão aqui (↓↑)</div>
+    )}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         {isSuccess && linhas && (
   <div className="space-y-2">

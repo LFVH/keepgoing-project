@@ -70,13 +70,12 @@ const Treinos = () => {
       }
     );
   }
-  const isCreateTreinoModalOpen = searchParams.get("criar-treino") === "open"
-  const editEventModal =
+  const isCreateDiarioModalOpen = searchParams.get("criar-treino") === "open"
+  const isEditDiarioModal =
     searchParams.get("editar-treino") === "open" &&
     searchParams.get("treino")?.trim() !== ""
 
   const handleSuccess = () => {
-    console.log("entrou no original")
     refetch(); 
     startTransition(() => router.push("?"));
   };
@@ -94,11 +93,9 @@ const Treinos = () => {
         throw new Error('Falha ao atualizar status');
       }
   
-      // Atualiza a lista de treinos após a mudança
       refetch();
     } catch (error) {
       console.error('Erro ao alternar status:', error);
-      // Você pode adicionar um toast de erro aqui se quiser
     }
   };
   return (
@@ -115,7 +112,7 @@ const Treinos = () => {
       </Button>
       
       <div className="mb-4">
-        {isCreateTreinoModalOpen || editEventModal ? (
+        {isCreateDiarioModalOpen || isEditDiarioModal ? (
           <Button 
             title="Voltar" 
             onClick={() => router.push("?")}
@@ -139,59 +136,61 @@ const Treinos = () => {
       </div>
     </div>
   
-    {/* Filter Buttons */}
-    <div className="flex gap-2 mb-4">
-      <Button
-        title="Mostrar ativos"
-        onClick={() => setFiltroAtivo(true)}
-        className={`px-4 py-2 rounded-md shadow transition-colors duration-200 ${
-          filtroAtivo === true 
-            ? 'bg-green-600 hover:bg-green-700 text-white' 
-            : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
-        }`}
-      >
-        <CheckIcon className="mr-2 h-4 w-4" />
-        Ativos
-      </Button>
-      
-      <Button
-        title="Mostrar arquivados"
-        onClick={() => setFiltroAtivo(false)}
-        className={`px-4 py-2 rounded-md shadow transition-colors duration-200 ${
-          filtroAtivo === false 
-            ? 'bg-yellow-600 hover:bg-yellow-700 text-white' 
-            : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
-        }`}
-      >
-        <ArchiveBoxIcon className="mr-2 h-4 w-4" />
-        Arquivados
-      </Button>
-      
-      <Button
-        title="Mostrar todos"
-        onClick={() => setFiltroAtivo(null)}
-        className={`px-4 py-2 rounded-md shadow transition-colors duration-200 ${
-          filtroAtivo === null 
-            ? 'bg-blue-600 hover:bg-blue-700 text-white' 
-            : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
-        }`}
-      >
-        <ListBulletIcon className="mr-2 h-4 w-4" />
-        Todos
-      </Button>
-    </div>
-  {isCreateTreinoModalOpen && (
+
+  {isCreateDiarioModalOpen && (
     <CreateTreino onSuccess={handleSuccess}/>
   )}
 
 
-  {editEventModal && (
+  {isEditDiarioModal && (
     <EditTreino onSuccess={handleSuccess}/>
   )}
-
-  {(treinos.length === 0) && (
+  {!isCreateDiarioModalOpen && isEditDiarioModal && (
+    <div className="flex gap-2 mb-4">
+    <Button
+      title="Mostrar ativos"
+      onClick={() => setFiltroAtivo(true)}
+      className={`px-4 py-2 rounded-md shadow transition-colors duration-200 ${
+        filtroAtivo === true 
+          ? 'bg-green-600 hover:bg-green-700 text-white' 
+          : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
+      }`}
+    >
+      <CheckIcon className="mr-2 h-4 w-4" />
+      Ativos
+    </Button>
+    
+    <Button
+      title="Mostrar arquivados"
+      onClick={() => setFiltroAtivo(false)}
+      className={`px-4 py-2 rounded-md shadow transition-colors duration-200 ${
+        filtroAtivo === false 
+          ? 'bg-yellow-600 hover:bg-yellow-700 text-white' 
+          : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
+      }`}
+    >
+      <ArchiveBoxIcon className="mr-2 h-4 w-4" />
+      Arquivados
+    </Button>
+    
+    <Button
+      title="Mostrar todos"
+      onClick={() => setFiltroAtivo(null)}
+      className={`px-4 py-2 rounded-md shadow transition-colors duration-200 ${
+        filtroAtivo === null 
+          ? 'bg-blue-600 hover:bg-blue-700 text-white' 
+          : 'bg-gray-200 hover:bg-gray-300 text-gray-800'
+      }`}
+    >
+      <ListBulletIcon className="mr-2 h-4 w-4" />
+      Todos
+    </Button>
+  </div>
+  )}
+  {(treinos.length === 0) && !isCreateDiarioModalOpen && isEditDiarioModal && (
     <div className="text-center">Seus treinos aparecerão aqui (↓↑)</div>
   )}
+  
   
   <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
     {isSuccess && treinos &&

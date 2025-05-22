@@ -313,13 +313,11 @@ const FormTreino = ({ onSuccess }: any) => {
   const onSubmit = async (data: IForm) => {
     const result = await submitTreino(data);
     if (result) {
-      console.log("result");
       onSuccess();
     }
   };
 
   const submitTreino = async (data: IForm) => {
-    console.log("submitTreino");
     const nome = data.nome.trim();
     const comment = data.coment.trim();
     const corCalendario = data.corCalendario.trim();
@@ -333,8 +331,8 @@ const FormTreino = ({ onSuccess }: any) => {
       comment === treino?.comentarioGeral &&
       corCalendario === treino?.corCalendario
     ) {
-      toast.info("Nenhuma alteração detectada.");
-      return;
+      //toast.info("Nenhuma alteração detectada.");
+      return '0';
     }
     try{
       const treinoSalvo = await toast.promise(
@@ -376,7 +374,6 @@ const FormTreino = ({ onSuccess }: any) => {
         (!execucao.comentarioExecucao || execucao.comentarioExecucao.trim() === "") &&
         (!execucao.tempo || execucao.tempo === 0)
   
-      // Se NÃO estiverem todos vazios (ou seja, se pelo menos um campo tem valor válido)
       const exercicioId = execucao.exercicio.id;
       if (!agrupado[exercicioId]) {
         agrupado[exercicioId] = {

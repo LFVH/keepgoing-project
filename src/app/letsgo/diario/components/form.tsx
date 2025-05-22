@@ -1,5 +1,5 @@
 "use client"
-import { useEffect, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
 import { toast } from "react-toastify"
 import { useForm } from "react-hook-form"
@@ -71,7 +71,8 @@ const FormDiario = ({ onSuccess }: any) => {
   const [isAddExecucaoOpen, setIsAddExecucaoOpen] = useState(false) ;
   const [treinosOptions, setTreinosOptions] = useState<ExercicioOption[]>([])
   const [searchTreinoTerm, setSearchTreinoTerm] = useState('')
-  const [selectedTreino, setSelectedTreino] = useState<TreinoOption | null>(null);
+  const [selectedTreino, setSelectedTreino] = useState<TreinoOption | null>({id: 0, nome: ''});
+  const [showDropdown, setShowDropdown] = useState(false);
   const [addExecucaoForm, setAddExecucaoForm] = useState<AddExecucaoForm>({
     exercicioId: null,
     reps: '',
@@ -130,6 +131,24 @@ const FormDiario = ({ onSuccess }: any) => {
     }
     setDataValues()
   }, [linha, isSuccess, reset, setValue]);
+
+  useEffect(() => {
+    const fetchTreinos = async () => {
+      setIsSearching(true);
+      try {
+        const response = await fetch('/api/letsgo/treinos');
+        const data = await response.json();
+        setTreinosOptions(data.treinos);
+        
+      } catch (error) {
+        console.error("Erro ao buscar ", error);
+      } finally {
+        setIsSearching(false);
+      }
+    };
+    fetchTreinos();
+  }, [selectedTreino]);
+
 
   async function handleLinha(
     id: string | null,
@@ -228,25 +247,8 @@ const FormDiario = ({ onSuccess }: any) => {
       }
     };
   
-  const fetchTreinos = async (term = '', treino?: TreinoOption) => {
-    try {
-      if(treino){
-        setSelectedTreino(treino);
-        setValue("treinoId", treino.id);
 
-        setSearchTreinoTerm(term)
-      } else if (term.length >= 2){
-        setIsSearching(true)
-        const response = await fetch(`/api/letsgo/treinos?search=${term}`)
-        const responseData = await response.json()
-        setTreinosOptions(responseData.treinos)
-      }
-    } catch (error) {
-      console.error("Erro ao buscar treinos: ", error)
-    } finally {
-      setIsSearching(false)
-    }
-  }
+
 
   const handleOpenAddExecucao = async (exercicio?: ExercicioOption) => {
     if(exercicio){ 
@@ -302,20 +304,15 @@ const FormDiario = ({ onSuccess }: any) => {
     })
     setPreselectedExercicio(undefined);
   }
-  
-  const handleSearchTreinos = async (term: string) => {
-    setSearchTreinoTerm(term)
-  
-    if (searchTimeout) clearTimeout(searchTimeout)
-    if (term.length >= 2) {
-      const timeout = setTimeout(() => {
-        fetchTreinos(term)
-      }, 300)
-      setSearchTimeout(timeout)
-    } else {
-      setTreinosOptions([])
-    }
-  }
+
+  const filteredExercicios = useMemo(() => {
+    if (!searchTreinoTerm) return treinosOptions;
+    
+    const term = searchTreinoTerm.toLowerCase();
+    return treinosOptions.filter(ex => 
+      ex.nome?.toLowerCase().includes(term)
+    );
+  }, [searchTreinoTerm, treinosOptions]);
   
   useEffect(() => {
     return () => {
@@ -411,8 +408,8 @@ const FormDiario = ({ onSuccess }: any) => {
       peso === linha?.pesoCorporal &&
       treinoId === linha?.treino.id
     ) {
-      toast.info("Nenhuma alteração detectada.");
-      return;
+      //toast.info("Nenhuma alteração detectada.");
+      return '0';
     }
   
     try {
@@ -534,69 +531,76 @@ const FormDiario = ({ onSuccess }: any) => {
                   type="text"
                   placeholder="Buscar treinos ou digite um novo..."
                   value={selectedTreino ? selectedTreino.nome : searchTreinoTerm}
+                  onFocus={() => setShowDropdown(true)}
+                  onBlur={() => setTimeout(() => setShowDropdown(false), 200)}
                   onChange={(e) => {
                     if (selectedTreino && e.target.value !== selectedTreino.nome) {
                       setSelectedTreino(null);
                       setValue("treinoId", null);
                     }
-                    handleSearchTreinos(e.target.value);
+                    setSearchTreinoTerm(e.target.value);
                   }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md"
                 />
 
                 {isSearching && <div className="text-sm text-gray-500">Buscando...</div>}
-                
-                {!selectedTreino && searchTreinoTerm && (
-                  <div className="
-                    absolute
-                    z-50
-                    w-full
-                    mt-1
-                    max-h-40
-                    overflow-y-auto
-                    bg-white
-                    border
-                    rounded-md
-                    shadow-lg
-                  ">
-                    {/* Opções existentes */}
-                    {treinosOptions.map(treino => (
-                      <div
-                        key={treino.id}
-                        className={`p-2 hover:bg-gray-100 cursor-pointer ${currentTreinoId === treino.id ? 'bg-blue-100' : ''}`}
-                        onClick={() => handleTreinoClick(treino)}
-                      >
-                        {treino.nome}
+                {showDropdown && (
+                  <div>
+                    {filteredExercicios?.length === 0 ? (
+                      <div className="p-2 text-gray-500">Nenhum exercício encontrado</div>
+                    ) :  (
+                      <div className="
+                        absolute
+                        z-50
+                        w-full
+                        mt-1
+                        max-h-40
+                        overflow-y-auto
+                        bg-white
+                        border
+                        rounded-md
+                        shadow-lg
+                      ">
+                        {/* Opções existentes */}
+                        {filteredExercicios.map(treino => (
+                          <div
+                            key={treino.id}
+                            className={`p-2 hover:bg-gray-100 cursor-pointer ${currentTreinoId === treino.id ? 'bg-blue-100' : ''}`}
+                            onClick={() => handleTreinoClick(treino)}
+                          >
+                            {treino.nome}
+                          </div>
+                        ))}
+                        
                       </div>
-                    ))}
-                    
-                    <div
-                      className="p-2 hover:bg-gray-100 cursor-pointer text-blue-600 font-medium border-t"
-                      onClick={async () => {
-                        try {
-                          const response = await fetch(`/api/letsgo/treino`, {
-                            method: "POST",
-                            headers: {
-                              "Content-Type": "application/json",
-                            },
-                            body: JSON.stringify({nome: searchTreinoTerm}),
-                          });
-                          if (!response.ok) {
-                            toast.error("Erro ao criar treino");
-                            return response.json.toString;
+                      )}
+                      {searchTreinoTerm.length > 0 && (<div
+                        className="p-2 hover:bg-gray-100 cursor-pointer text-blue-600 font-medium border-t"
+                        onClick={async () => {
+                          try {
+                            const response = await fetch(`/api/letsgo/treino`, {
+                              method: "POST",
+                              headers: {
+                                "Content-Type": "application/json",
+                              },
+                              body: JSON.stringify({nome: searchTreinoTerm}),
+                            });
+                            if (!response.ok) {
+                              toast.error("Erro ao criar treino");
+                              return response.json.toString;
+                            }
+                            
+                            const newTreino = (await response.json()).data;
+                            setSelectedTreino(newTreino);
+                            setValue("treinoId", newTreino.id);
+                            setSearchTreinoTerm(newTreino.nome);
+                          } catch (error) {
+                            console.error("Erro ao criar treino:", error);
                           }
-                          
-                          const newTreino = (await response.json()).data;
-                          setSelectedTreino(newTreino);
-                          setValue("treinoId", newTreino.id);
-                          setSearchTreinoTerm('');
-                        } catch (error) {
-                          console.error("Erro ao criar treino:", error);
-                        }
-                      }}
-                    >
-                      + Criar novo treino "{searchTreinoTerm}"
-                    </div>
+                        }}
+                      >
+                        + Criar novo treino "{searchTreinoTerm}"
+                      </div>)}
                   </div>
                 )}
               </div>
