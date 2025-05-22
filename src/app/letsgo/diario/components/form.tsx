@@ -1,12 +1,12 @@
 "use client"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
 import { toast } from "react-toastify"
 import { useForm } from "react-hook-form"
 import { useQuery } from "@tanstack/react-query"
 import { useRouter, useSearchParams } from "next/navigation"
-import { unstable_cacheLife } from "next/cache"
 import { logNow } from "@/utils/Logging"
+import { ExercicioOption, SelectExercicio } from "../../components/ExerciciosSelector"
 
 export interface IForm {
   id?: string,
@@ -14,10 +14,6 @@ export interface IForm {
   comment: string | null,
   peso: number | null,
   data: string | null,
-}
-interface ExercicioOption {
-  id: number
-  nome: string
 }
 interface TreinoOption {
   id: number
@@ -47,7 +43,8 @@ interface Execucao {
   percepcao: number,
   exercicio: {
     id: number,
-    nome: string
+    nome: string,
+    name: string
   },
   comentarioExecucao?: string
 }
@@ -59,22 +56,21 @@ interface LinhaComExecucoes {
   pesoCorporal: number,
   treino: {
     id: number,
-    nome: string
+    nome: string,
+    name: string
   },
   execucoes: Execucao[]
 }
 
 const FormDiario = ({ onSuccess }: any) => {
   const router = useRouter();
+  const [preselectedExercicio, setPreselectedExercicio] = useState<ExercicioOption | undefined>(undefined);
   const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout>()
   const [isSearching, setIsSearching] = useState(false)
   const [isEditing, setIsEditing] = useState(false);
   const [isAddExecucaoOpen, setIsAddExecucaoOpen] = useState(false) ;
-  const [exerciciosOptions, setExerciciosOptions] = useState<ExercicioOption[]>([])
   const [treinosOptions, setTreinosOptions] = useState<ExercicioOption[]>([])
-  const [searchTerm, setSearchTerm] = useState('')
   const [searchTreinoTerm, setSearchTreinoTerm] = useState('')
-  const [selectedExercicio, setSelectedExercicio] = useState<ExercicioOption | null>(null);
   const [selectedTreino, setSelectedTreino] = useState<TreinoOption | null>(null);
   const [addExecucaoForm, setAddExecucaoForm] = useState<AddExecucaoForm>({
     exercicioId: null,
@@ -252,27 +248,13 @@ const FormDiario = ({ onSuccess }: any) => {
     }
   }
 
-  const fetchExercicios = async (term = '', exercicio?: ExercicioOption) => {
-    try {
-      if(exercicio){
-        setSelectedExercicio(exercicio);
-        setAddExecucaoForm(prev => ({ ...prev, exercicioId: exercicio.id }));
-
-        setSearchTerm(term)
-      } else if (term.length >= 2){
-        setIsSearching(true)
-        const response = await fetch(`/api/letsgo/exercicios?search=${term}`)
-        const responseData = await response.json()
-        setExerciciosOptions(responseData.exercicios)
-      }
-    } catch (error) {
-      console.error("Erro ao buscar exercícios: ", error)
-    } finally {
-      setIsSearching(false)
-    }
-  }
-
   const handleOpenAddExecucao = async (exercicio?: ExercicioOption) => {
+    if(exercicio){ 
+      setAddExecucaoForm(prev => ({ ...prev, exercicioId: exercicio.id }))
+      setPreselectedExercicio(exercicio)  
+    } else{
+      setPreselectedExercicio(undefined);
+    }
     try {
       const response = await saveLinha(getValues());
       if (!response || !response.data?.id) {
@@ -290,7 +272,6 @@ const FormDiario = ({ onSuccess }: any) => {
       logNow("Erro durante o submit:")
       console.log(error);
     }   
-    await fetchExercicios('',exercicio)
     setIsAddExecucaoOpen(true)
     return;
   }
@@ -319,8 +300,7 @@ const FormDiario = ({ onSuccess }: any) => {
       tempo: null,
       percepcao: null,
     })
-    setSearchTerm('')
-    setSelectedExercicio(null);
+    setPreselectedExercicio(undefined);
   }
   
   const handleSearchTreinos = async (term: string) => {
@@ -334,23 +314,6 @@ const FormDiario = ({ onSuccess }: any) => {
       setSearchTimeout(timeout)
     } else {
       setTreinosOptions([])
-    }
-  }
-
-  const handleSearchExercicios = async (term: string) => {
-    setSearchTerm(term)
-  
-    // Cancela o timeout anterior
-    if (searchTimeout) clearTimeout(searchTimeout)
-    
-    // Só pesquisa após 300ms do último caractere digitado
-    if (term.length >= 2) {
-      const timeout = setTimeout(() => {
-        fetchExercicios(term)
-      }, 300)
-      setSearchTimeout(timeout)
-    } else {
-      setExerciciosOptions([])
     }
   }
   
@@ -483,7 +446,7 @@ const FormDiario = ({ onSuccess }: any) => {
   };
 
   const execucoesPorExercicio = (() => {
-    const agrupado: Record<number, { exercicio: { id: number, nome: string }, execucoes: Execucao[] }> = {};
+    const agrupado: Record<number, { exercicio: { id: number, nome: string, name: string }, execucoes: Execucao[] }> = {};
     //const tempExerciciosVazios: number[] = []
     linha?.execucoes?.forEach((execucao) => {
       // Verifica se todos os campos relevantes estão vazios/zero
@@ -564,80 +527,80 @@ const FormDiario = ({ onSuccess }: any) => {
           <div>
             {/* Seletor de Treino */}
             <div>
-  {/* Seletor de Treino com opção de criar novo */}
-  <div className="relative">
-    <label className="block text-sm font-medium text-gray-700 mb-1">Treino*</label>
-    <input
-      type="text"
-      placeholder="Buscar treinos ou digite um novo..."
-      value={selectedTreino ? selectedTreino.nome : searchTreinoTerm}
-      onChange={(e) => {
-        if (selectedTreino && e.target.value !== selectedTreino.nome) {
-          setSelectedTreino(null);
-          setValue("treinoId", null);
-        }
-        handleSearchTreinos(e.target.value);
-      }}
-      className="w-full px-3 py-2 border border-gray-300 rounded-md"
-    />
+              {/* Seletor de Treino com opção de criar novo */}
+              <div className="relative">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Treino*</label>
+                <input
+                  type="text"
+                  placeholder="Buscar treinos ou digite um novo..."
+                  value={selectedTreino ? selectedTreino.nome : searchTreinoTerm}
+                  onChange={(e) => {
+                    if (selectedTreino && e.target.value !== selectedTreino.nome) {
+                      setSelectedTreino(null);
+                      setValue("treinoId", null);
+                    }
+                    handleSearchTreinos(e.target.value);
+                  }}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                />
 
-    {isSearching && <div className="text-sm text-gray-500">Buscando...</div>}
-    
-    {!selectedTreino && searchTreinoTerm && (
-      <div className="
-        absolute
-        z-50
-        w-full
-        mt-1
-        max-h-40
-        overflow-y-auto
-        bg-white
-        border
-        rounded-md
-        shadow-lg
-      ">
-        {/* Opções existentes */}
-        {treinosOptions.map(treino => (
-          <div
-            key={treino.id}
-            className={`p-2 hover:bg-gray-100 cursor-pointer ${currentTreinoId === treino.id ? 'bg-blue-100' : ''}`}
-            onClick={() => handleTreinoClick(treino)}
-          >
-            {treino.nome}
-          </div>
-        ))}
-        
-        <div
-          className="p-2 hover:bg-gray-100 cursor-pointer text-blue-600 font-medium border-t"
-          onClick={async () => {
-            try {
-              const response = await fetch(`/api/letsgo/treino`, {
-                method: "POST",
-                headers: {
-                  "Content-Type": "application/json",
-                },
-                body: JSON.stringify({nome: searchTreinoTerm}),
-              });
-              if (!response.ok) {
-                toast.error("Erro ao criar treino");
-                return response.json.toString;
-              }
-              
-              const newTreino = (await response.json()).data;
-              setSelectedTreino(newTreino);
-              setValue("treinoId", newTreino.id);
-              setSearchTreinoTerm('');
-            } catch (error) {
-              console.error("Erro ao criar treino:", error);
-            }
-          }}
-        >
-          + Criar novo treino "{searchTreinoTerm}"
-        </div>
-      </div>
-    )}
-  </div>
-</div>
+                {isSearching && <div className="text-sm text-gray-500">Buscando...</div>}
+                
+                {!selectedTreino && searchTreinoTerm && (
+                  <div className="
+                    absolute
+                    z-50
+                    w-full
+                    mt-1
+                    max-h-40
+                    overflow-y-auto
+                    bg-white
+                    border
+                    rounded-md
+                    shadow-lg
+                  ">
+                    {/* Opções existentes */}
+                    {treinosOptions.map(treino => (
+                      <div
+                        key={treino.id}
+                        className={`p-2 hover:bg-gray-100 cursor-pointer ${currentTreinoId === treino.id ? 'bg-blue-100' : ''}`}
+                        onClick={() => handleTreinoClick(treino)}
+                      >
+                        {treino.nome}
+                      </div>
+                    ))}
+                    
+                    <div
+                      className="p-2 hover:bg-gray-100 cursor-pointer text-blue-600 font-medium border-t"
+                      onClick={async () => {
+                        try {
+                          const response = await fetch(`/api/letsgo/treino`, {
+                            method: "POST",
+                            headers: {
+                              "Content-Type": "application/json",
+                            },
+                            body: JSON.stringify({nome: searchTreinoTerm}),
+                          });
+                          if (!response.ok) {
+                            toast.error("Erro ao criar treino");
+                            return response.json.toString;
+                          }
+                          
+                          const newTreino = (await response.json()).data;
+                          setSelectedTreino(newTreino);
+                          setValue("treinoId", newTreino.id);
+                          setSearchTreinoTerm('');
+                        } catch (error) {
+                          console.error("Erro ao criar treino:", error);
+                        }
+                      }}
+                    >
+                      + Criar novo treino "{searchTreinoTerm}"
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
             <div>
               <label htmlFor="data" className="block text-sm font-medium text-gray-700 mb-1">
                 Data do Registro *
@@ -848,55 +811,11 @@ const FormDiario = ({ onSuccess }: any) => {
 
             <div className="space-y-4">
               {/* Seletor de Exercício */}
-              <div className="relative">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Exercício</label>
-              <input
-                type="text"
-                placeholder="Buscar exercício..."
-                value={selectedExercicio ? selectedExercicio.nome : searchTerm}
-                onChange={(e) => {
-                  // Se tiver um exercício selecionado e o usuário começar a digitar, limpa a seleção
-                  if (selectedExercicio && e.target.value !== selectedExercicio.nome) {
-                    setSelectedExercicio(null);
-                    setAddExecucaoForm(prev => ({ ...prev, exercicioId: null }));
-                  }
-                  handleSearchExercicios(e.target.value);
-                }}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+              <SelectExercicio
+                onSelect={(exercicioId) => setAddExecucaoForm(prev => ({ ...prev, exercicioId }))}
+                selectedId={addExecucaoForm.exercicioId}
+                initialValue={preselectedExercicio} // Passe o exercício pré-selecionado
               />
-
-              {isSearching && <div className="text-sm text-gray-500">Buscando...</div>}
-              
-              {!selectedExercicio && searchTerm && (
-                  <div className="
-                  absolute          // Posiciona sobre outros elementos
-                  z-50              // Garante que fique acima de tudo
-                  w-full           // Largura igual ao input
-                  mt-1             // Espaço do input
-                  max-h-40          // Altura máxima
-                  overflow-y-auto  // Rolagem automática
-                  bg-white          // Fundo branco
-                  border           // Borda
-                  rounded-md       // Cantos arredondados
-                  shadow-lg        // Sombra para efeito de elevação
-                ">
-                    {exerciciosOptions.map(exercicio => (
-                      <div
-                        key={exercicio.id}
-                        className={`p-2 hover:bg-gray-100 cursor-pointer ${addExecucaoForm.exercicioId === exercicio.id ? 'bg-blue-100' : ''}`}
-                        onClick={() => {
-                          setSelectedExercicio(exercicio);
-                          setAddExecucaoForm(prev => ({ ...prev, exercicioId: exercicio.id }));
-                          // Limpa a busca mantendo o item selecionado
-                          setSearchTerm('');
-                        }}
-                      >
-                        {exercicio.nome}
-                      </div>
-                    ))}
-                  </div>
-              )}
-            </div>
 
               {/* Campos numéricos */}
               <div className="grid grid-cols-3 gap-4">

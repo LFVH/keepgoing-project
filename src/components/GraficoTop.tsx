@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
@@ -10,6 +10,7 @@ import {
   Tooltip,
   Legend,
 } from 'chart.js';
+import { useQuery } from '@tanstack/react-query';
 
 ChartJS.register(
   CategoryScale,
@@ -25,6 +26,7 @@ interface Execucao {
   reps?: number;
   sets?: number;
   carga?: number;
+  exercicioId: number;
 }
 
 interface LinhaDiario {
@@ -35,29 +37,48 @@ interface LinhaDiario {
   };
 }
 
-interface ProgressChartProps {
-  linhasDiario: LinhaDiario[];
+interface ExercicioOption {
+  id: number;
+  nome: string;
 }
 
-const ProgressChart: React.FC<ProgressChartProps> = ({ linhasDiario }) => {
-  // Processar dados para o gráfico
+const fetchProgressData = async (exercicioId?: number) => {
+  const res = await fetch(`/api/letsgo/grafico?${exercicioId ? `&exercicioId=${exercicioId}` : ''}`);
+  return res.json();
+};
+
+const fetchExerciciosRealizados = async () => {
+  const res = await fetch(`/api/letsgo/grafico/exerciciosRealizados`);
+  return res.json();
+};
+
+const ProgressChart = () => {
+  const [selectedExercicio, setSelectedExercicio] = useState<number | undefined>();
+  
+  // Buscar opções de exercícios
+  const { data: exerciciosOptions } = useQuery<ExercicioOption[]>({
+    queryKey: ['exerciciosRealizados'],
+    queryFn: fetchExerciciosRealizados,
+  });
+  
+  // Buscar dados do gráfico
+  const { data: linhasDiario } = useQuery<LinhaDiario[]>({
+    queryKey: ['progressData', selectedExercicio],
+    queryFn: () => fetchProgressData(selectedExercicio),
+  });
+
   const processData = () => {
+    if (!linhasDiario) return { labels: [], realData: [], plannedData: [] };
+
     const labels: string[] = [];
     const realData: number[] = [];
     const plannedData: number[] = [];
 
-    // Ordenar por data (mais antigo para mais recente)
-    const sortedDiario = [...linhasDiario].sort((a, b) => 
-      new Date(a.data).getTime() - new Date(b.data).getTime()
-    );
-
-    sortedDiario.forEach((linha) => {
-      // Formatar data para label
+    linhasDiario.forEach((linha) => {
       const date = new Date(linha.data);
-      const dateLabel = `${date.getDate()}/${date.getMonth() + 1}`;
-      labels.push(dateLabel);
+      labels.push(`${date.getDate()}/${date.getMonth() + 1}`);
 
-      // Calcular valor total para execuções reais
+      // Calcular total real
       const realTotal = linha.execucoes.reduce((sum, exec) => {
         const reps = exec.reps || 0;
         const sets = exec.sets || 0;
@@ -66,7 +87,7 @@ const ProgressChart: React.FC<ProgressChartProps> = ({ linhasDiario }) => {
       }, 0);
       realData.push(realTotal);
 
-      // Calcular valor total para execuções planejadas (se existir treino)
+      // Calcular total planejado
       const plannedTotal = linha.treino?.execucoes.reduce((sum, exec) => {
         const reps = exec.reps || 0;
         const sets = exec.sets || 0;
@@ -79,60 +100,73 @@ const ProgressChart: React.FC<ProgressChartProps> = ({ linhasDiario }) => {
     return { labels, realData, plannedData };
   };
 
-  const { labels, realData, plannedData } = processData();
-
+  const { labels, realData, plannedData } = processData(); 
   const data = {
     labels,
     datasets: [
       {
-        label: 'Execuções Reais (rep × set × carga)',
+        label: selectedExercicio 
+          ? `Execuções Reais - ${exerciciosOptions?.find(e => e.id === selectedExercicio)?.nome || 'Exercício'}`
+          : 'Execuções Reais (Todos exercícios)',
         data: realData,
         borderColor: 'rgb(255, 99, 132)',
         backgroundColor: 'rgba(255, 99, 132, 0.5)',
-        tension: 0.1,
       },
       {
-        label: 'Execuções Planejadas (rep × set × carga)',
+        label: selectedExercicio 
+          ? `Execuções Planejadas - ${exerciciosOptions?.find(e => e.id === selectedExercicio)?.nome || 'Exercício'}`
+          : 'Execuções Planejadas (Todos exercícios)',
         data: plannedData,
         borderColor: 'rgb(53, 162, 235)',
         backgroundColor: 'rgba(53, 162, 235, 0.5)',
-        tension: 0.1,
       },
     ],
   };
 
-  const options = {
-    responsive: true,
-    plugins: {
-      legend: {
-        position: 'top' as const,
-      },
-      title: {
-        display: true,
-        text: 'Progresso de Treino - Real vs Planejado',
-      },
-      tooltip: {
-        callbacks: {
-          label: function(context: any) {
-            return `${context.dataset.label}: ${context.raw.toLocaleString()} kg`;
-          }
-        }
-      }
-    },
-    scales: {
-      y: {
-        beginAtZero: true,
-        title: {
-          display: true,
-          text: 'Volume (rep × set × carga)'
-        }
-      }
-    }
-  };
-
   return (
     <div className="w-full max-w-4xl mx-auto p-4 bg-white rounded-lg shadow">
-      <Line options={options} data={data} />
+      <div className="mb-4">
+        <label htmlFor="exercicio" className="block text-sm font-medium text-gray-700">
+          Filtrar por exercício:
+        </label>
+        <select
+          id="exercicio"
+          className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm rounded-md"
+          value={selectedExercicio || ''}
+          onChange={(e) => setSelectedExercicio(e.target.value ? Number(e.target.value) : undefined)}
+        >
+          <option value="">Todos os exercícios</option>
+          {exerciciosOptions?.map((exercicio) => (
+            <option key={exercicio.id} value={exercicio.id}>
+              {exercicio.nome}
+            </option>
+          ))}
+        </select>
+      </div>
+      
+      <Line 
+        data={data} 
+        options={{
+          responsive: true,
+          plugins: {
+            title: {
+              display: true,
+              text: selectedExercicio
+                ? `Progresso - ${exerciciosOptions?.find(e => e.id === selectedExercicio)?.nome || 'Exercício'}`
+                : 'Progresso Geral',
+            },
+          },
+          scales: {
+            y: {
+              beginAtZero: true,
+              title: {
+                display: true,
+                text: 'Volume (rep × set × carga)'
+              }
+            }
+          }
+        }} 
+      />
     </div>
   );
 };

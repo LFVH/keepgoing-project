@@ -1,21 +1,19 @@
 "use client"
-import { useEffect, useRef, useState } from "react"
+import { useEffect, useState } from "react"
 import { Dialog, DialogPanel, DialogTitle } from '@headlessui/react'
 import { toast } from "react-toastify"
 import { useForm } from "react-hook-form"
 import { useQuery } from "@tanstack/react-query"
 import { useRouter, useSearchParams } from "next/navigation"
 import { ColorPicker } from "@/components/ui/colorpicker"
+import { ExercicioOption, SelectExercicio } from "../../components/ExerciciosSelector"
+import { logNow } from "@/utils/Logging"
 
 export interface IForm {
   id?: string,
   nome: string,
   coment: string,
   corCalendario: string,
-}
-interface ExercicioOption {
-  id: number
-  nome: string
 }
 
 interface AddExecucaoForm {
@@ -28,8 +26,6 @@ interface AddExecucaoForm {
   segundos: number | null
   tempo: number | null
 }
-
-
 interface Execucao {
   id: number,
   reps: number,
@@ -38,7 +34,8 @@ interface Execucao {
   tempo: number,
   exercicio: {
     id: number,
-    nome: string
+    nome: string,
+    name: string
   },
   comentarioExecucao?: string
 }
@@ -52,14 +49,10 @@ interface TreinoComExecucoes {
 }
 
 const FormTreino = ({ onSuccess }: any) => {
+  const [preselectedExercicio, setPreselectedExercicio] = useState<ExercicioOption | undefined>(undefined);
   const router = useRouter();
-  const [searchTimeout, setSearchTimeout] = useState<NodeJS.Timeout>()
-  const [isSearching, setIsSearching] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [isAddExecucaoOpen, setIsAddExecucaoOpen] = useState(false)
-  const [exerciciosOptions, setExerciciosOptions] = useState<ExercicioOption[]>([])
-  const [searchTerm, setSearchTerm] = useState('')
-  const [selectedExercicio, setSelectedExercicio] = useState<ExercicioOption | null>(null);
   const [addExecucaoForm, setAddExecucaoForm] = useState<AddExecucaoForm>({
     exercicioId: null,
     reps: '',
@@ -201,27 +194,13 @@ const FormTreino = ({ onSuccess }: any) => {
     }
   };
 
-  const fetchExercicios = async (term = '', exercicio?: ExercicioOption) => {
-    try {
-      if(exercicio){
-        setSelectedExercicio(exercicio);
-        setAddExecucaoForm(prev => ({ ...prev, exercicioId: exercicio.id }));
-
-        setSearchTerm(term)
-      } else if (term.length >= 2){
-        setIsSearching(true)
-        const response = await fetch(`/api/letsgo/exercicios?search=${term}`)
-        const data = await response.json()
-        setExerciciosOptions(data.exercicios)
-      }
-    } catch (error) {
-      console.error("Erro ao buscar exercícios: ", error)
-    } finally {
-      setIsSearching(false)
-    }
-  }
-
   const handleOpenAddExecucao = async (exercicio?: ExercicioOption) => {
+    if(exercicio){ 
+      setAddExecucaoForm(prev => ({ ...prev, exercicioId: exercicio.id }))
+      setPreselectedExercicio(exercicio)  
+    } else{
+      setPreselectedExercicio(undefined);
+    }
     if (!treinoId) {
       try {
         const response = await submitTreino(getValues());
@@ -242,8 +221,7 @@ const FormTreino = ({ onSuccess }: any) => {
       }
     return;
   }
-    await fetchExercicios('',exercicio)
-    setIsAddExecucaoOpen(true)
+  setIsAddExecucaoOpen(true)
   }
 
   const handleCloseAddExecucao = () => {
@@ -269,33 +247,8 @@ const FormTreino = ({ onSuccess }: any) => {
       segundos: null,
       tempo: null,
     })
-    setSearchTerm('')
-    setSelectedExercicio(null);
+    setPreselectedExercicio(undefined);
   }
-
-  const handleSearchExercicios = async (term: string) => {
-    setSearchTerm(term)
-  
-    // Cancela o timeout anterior
-    if (searchTimeout) clearTimeout(searchTimeout)
-    
-    // Só pesquisa após 300ms do último caractere digitado
-    if (term.length >= 2) {
-      const timeout = setTimeout(() => {
-        fetchExercicios(term)
-      }, 300)
-      setSearchTimeout(timeout)
-    } else {
-      setExerciciosOptions([])
-    }
-  }
-  
-  // Limpa o timeout quando o componente desmontar
-  useEffect(() => {
-    return () => {
-      if (searchTimeout) clearTimeout(searchTimeout)
-    }
-  }, [searchTimeout])
 
   const handleAddExecucaoSubmit = async (shouldClose: boolean) => {
     // Validação
@@ -413,7 +366,7 @@ const FormTreino = ({ onSuccess }: any) => {
   };
  
   const execucoesPorExercicio = (() => {
-    const agrupado: Record<number, { exercicio: { id: number, nome: string }, execucoes: Execucao[] }> = {};
+    const agrupado: Record<number, { exercicio: { id: number, nome: string , name: string}, execucoes: Execucao[] }> = {};
     //const tempExerciciosVazios: number[] = []
     treino?.execucoes?.forEach((execucao) => {
       // Verifica se todos os campos relevantes estão vazios/zero
@@ -640,55 +593,11 @@ const FormTreino = ({ onSuccess }: any) => {
 
             <div className="space-y-4">
               {/* Seletor de Exercício */}
-              <div className="relative">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Exercício*</label>
-              <input
-                type="text"
-                placeholder="Buscar exercício..."
-                value={selectedExercicio ? selectedExercicio.nome : searchTerm}
-                onChange={(e) => {
-                  // Se tiver um exercício selecionado e o usuário começar a digitar, limpa a seleção
-                  if (selectedExercicio && e.target.value !== selectedExercicio.nome) {
-                    setSelectedExercicio(null);
-                    setAddExecucaoForm(prev => ({ ...prev, exercicioId: null }));
-                  }
-                  handleSearchExercicios(e.target.value);
-                }}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md"
+              <SelectExercicio
+                onSelect={(exercicioId) => setAddExecucaoForm(prev => ({ ...prev, exercicioId }))}
+                selectedId={addExecucaoForm.exercicioId}
+                initialValue={preselectedExercicio} // Passe o exercício pré-selecionado
               />
-
-              {isSearching && <div className="text-sm text-gray-500">Buscando...</div>}
-              
-              {!selectedExercicio && searchTerm && (
-                  <div className="
-                  absolute          // Posiciona sobre outros elementos
-                  z-50              // Garante que fique acima de tudo
-                  w-full           // Largura igual ao input
-                  mt-1             // Espaço do input
-                  max-h-40          // Altura máxima
-                  overflow-y-auto  // Rolagem automática
-                  bg-white          // Fundo branco
-                  border           // Borda
-                  rounded-md       // Cantos arredondados
-                  shadow-lg        // Sombra para efeito de elevação
-                ">
-                    {exerciciosOptions.map(exercicio => (
-                      <div
-                        key={exercicio.id}
-                        className={`p-2 hover:bg-gray-100 cursor-pointer ${addExecucaoForm.exercicioId === exercicio.id ? 'bg-blue-100' : ''}`}
-                        onClick={() => {
-                          setSelectedExercicio(exercicio);
-                          setAddExecucaoForm(prev => ({ ...prev, exercicioId: exercicio.id }));
-                          // Limpa a busca mantendo o item selecionado
-                          setSearchTerm('');
-                        }}
-                      >
-                        {exercicio.nome}
-                      </div>
-                    ))}
-                  </div>
-              )}
-            </div>
 
               {/* Campos numéricos */}
               <div className="grid grid-cols-3 gap-4">

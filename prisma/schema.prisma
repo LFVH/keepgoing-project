@@ -34,14 +34,26 @@ model RefreshToken {
 
 model Exercicio {
   id             Int      @id @default(autoincrement())
-  nome           String   @unique
+  nome           String?   @unique
+  name           String?   @unique
   execucoesPlano ExecucaoPlano[]
   execucoesReal  ExecucaoReal[]
   updatedAt      DateTime @updatedAt
   createdAt      DateTime @default(now())
   user           Usuario?  @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate:   Cascade)
   userId         String?
-  @@index([nome])
+  grupoMuscular   GrupoMuscular?  @relation(fields: [grupoMuscularId], references: [id], onDelete: Cascade, onUpdate:   Cascade)
+  grupoMuscularId Int?
+}
+ // @@index([nome])
+
+model GrupoMuscular {
+  id             Int      @id @default(autoincrement())
+  nome           String?   @unique
+  name           String?   @unique
+  updatedAt      DateTime @updatedAt
+  createdAt      DateTime @default(now())
+  exercicios     Exercicio[]
 }
 
 model Treino {
