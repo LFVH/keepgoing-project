@@ -36,7 +36,7 @@ export default function Page() {
   return (
     <div className="grid gap-4 md:gap-8">
       <div>
-        <h1 className="text-center text-2xl font-bold mb-4">Meus Dias Treinados</h1>
+        <h1 className="text-center text-2xl font-bold mb-4">Meu Calendário de Treinos</h1>
         <CalendarioTreinos linhasDiario={linhas} />
       </div>
       <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-4 sm:p-20 font-[family-name:var(--font-geist-sans)]">
@@ -54,6 +54,11 @@ export default function Page() {
           <Button asChild title="Ver, Adicionar ou Remover treinos pre cadastrados" variant="treino" size="treino" >
             <Link href="/letsgo/treinos">
               Plano de treinos
+            </Link>
+          </Button>
+          <Button asChild title="Ver, Adicionar ou Remover treinos pre cadastrados" variant="treino" size="treino" >
+            <Link href="/letsgo/statistics">
+              Estatísticas
             </Link>
           </Button>
         </main>
