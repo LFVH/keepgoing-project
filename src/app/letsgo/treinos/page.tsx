@@ -275,7 +275,7 @@ const Treinos = () => {
                       <button
                         onClick={() => handleCopyTreino(treino.id)}
                         className="text-purple-500 hover:text-purple-700 p-1 rounded-full hover:bg-purple-50 transition-colors"
-                        title="Copiar treino"
+                        title="Duplicar treino"
                       >
                         <FaCopy className="w-5 h-5" />
                       </button>
