@@ -1,12 +1,13 @@
 import { NextResponse } from 'next/server'
 import prisma from "@/database/prisma";
 import { verifyUser } from '@/utils/verifyUserAuth';
+import { logNow } from '@/utils/Logging';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
-      const userId = await verifyUser();
-      if (userId instanceof NextResponse) {
-        return userId;} 
+  const userId = await verifyUser();
+  if (userId instanceof NextResponse) 
+    return userId; 
 
   if (!userId) {
     return NextResponse.json({ error: 'userId é obrigatório' }, { status: 400 })
@@ -24,15 +25,16 @@ export async function GET(request: Request) {
         exercicio: {
           select: {
             id: true,
-            nome: true
+            nome: true,
+            name: true
           }
         }
       }
     })
-
     const formatted = exercicios.map(e => ({
       id: e.exercicio.id,
-      nome: e.exercicio.nome
+      nome: e.exercicio.nome,
+      name: e.exercicio.name
     }))
 
     return NextResponse.json(formatted)

@@ -5,7 +5,7 @@ import ProgressChart from '@/components/GraficoTop';
 export default function Page() {
 
   return (
-    <div>
+    <div className="text-center">
       <h1>Meu Progresso</h1>
       <ProgressChart />
     </div>

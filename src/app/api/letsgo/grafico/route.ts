@@ -4,9 +4,9 @@ import { verifyUser } from '@/utils/verifyUserAuth';
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url)
-      const userId = await verifyUser();
-      if (userId instanceof NextResponse) {
-        return userId;} 
+  const userId = await verifyUser();
+  if (userId instanceof NextResponse) {
+    return userId;} 
   const exercicioId = searchParams.get('exercicioId')
 
   if (!userId) {

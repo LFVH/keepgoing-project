@@ -305,7 +305,7 @@ const FormDiario = ({ onSuccess }: any) => {
     setPreselectedExercicio(undefined);
   }
 
-  const filteredExercicios = useMemo(() => {
+  const filteredTreinos = useMemo(() => {
     if (!searchTreinoTerm) return treinosOptions;
     
     const term = searchTreinoTerm.toLowerCase();
@@ -546,8 +546,8 @@ const FormDiario = ({ onSuccess }: any) => {
                 {isSearching && <div className="text-sm text-gray-500">Buscando...</div>}
                 {showDropdown && (
                   <div>
-                    {filteredExercicios?.length === 0 ? (
-                      <div className="p-2 text-gray-500">Nenhum exercício encontrado</div>
+                    {filteredTreinos?.length === 0 ? (
+                      <div className="p-2 text-gray-500">Nenhum treino encontrado</div>
                     ) :  (
                       <div className="
                         absolute
@@ -562,7 +562,7 @@ const FormDiario = ({ onSuccess }: any) => {
                         shadow-lg
                       ">
                         {/* Opções existentes */}
-                        {filteredExercicios.map(treino => (
+                        {filteredTreinos.map(treino => (
                           <div
                             key={treino.id}
                             className={`p-2 hover:bg-gray-100 cursor-pointer ${currentTreinoId === treino.id ? 'bg-blue-100' : ''}`}
@@ -704,10 +704,10 @@ const FormDiario = ({ onSuccess }: any) => {
                   <thead className="bg-gray-50">
                     <tr>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Repetições
+                        Séries
                       </th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        Séries
+                        Repetições
                       </th>
                       <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                         Carga (kg)
@@ -730,10 +730,10 @@ const FormDiario = ({ onSuccess }: any) => {
                     {execucoesOrdenadas && execucoesOrdenadas.map((execucao: any) => (
                       <tr key={execucao.id}>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {execucao.reps}
+                          {execucao.sets}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                          {execucao.sets}
+                          {execucao.reps}
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                           {execucao.carga}
@@ -823,18 +823,6 @@ const FormDiario = ({ onSuccess }: any) => {
 
               {/* Campos numéricos */}
               <div className="grid grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Repetições</label>
-                  <input
-                    type="number"
-                    min="1"
-                    max="999"
-                    step="1"
-                    value={addExecucaoForm.reps}
-                    onChange={(e) => setAddExecucaoForm(prev => ({ ...prev, reps: e.target.value }))}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
-                  />
-                </div>
 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Séries</label>
@@ -845,6 +833,18 @@ const FormDiario = ({ onSuccess }: any) => {
                     step="1"
                     value={addExecucaoForm.sets}
                     onChange={(e) => setAddExecucaoForm(prev => ({ ...prev, sets: e.target.value }))}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-md"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Repetições</label>
+                  <input
+                    type="number"
+                    min="1"
+                    max="999"
+                    step="1"
+                    value={addExecucaoForm.reps}
+                    onChange={(e) => setAddExecucaoForm(prev => ({ ...prev, reps: e.target.value }))}
                     className="w-full px-3 py-2 border border-gray-300 rounded-md"
                   />
                 </div>

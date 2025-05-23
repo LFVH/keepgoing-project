@@ -40,10 +40,11 @@ interface LinhaDiario {
 interface ExercicioOption {
   id: number;
   nome: string;
+  name: string
 }
 
 const fetchProgressData = async (exercicioId?: number) => {
-  const res = await fetch(`/api/letsgo/grafico?${exercicioId ? `&exercicioId=${exercicioId}` : ''}`);
+  const res = await fetch(`/api/letsgo/grafico?${exercicioId ? `exercicioId=${exercicioId}` : ''}`);
   return res.json();
 };
 
@@ -106,7 +107,7 @@ const ProgressChart = () => {
     datasets: [
       {
         label: selectedExercicio 
-          ? `Execuções Reais - ${exerciciosOptions?.find(e => e.id === selectedExercicio)?.nome || 'Exercício'}`
+          ? `Execuções Reais - ${exerciciosOptions?.find(e => e.id === selectedExercicio)?.nome +'/'+ exerciciosOptions?.find(e => e.id === selectedExercicio)?.name || 'Exercício'}`
           : 'Execuções Reais (Todos exercícios)',
         data: realData,
         borderColor: 'rgb(255, 99, 132)',
@@ -114,7 +115,7 @@ const ProgressChart = () => {
       },
       {
         label: selectedExercicio 
-          ? `Execuções Planejadas - ${exerciciosOptions?.find(e => e.id === selectedExercicio)?.nome || 'Exercício'}`
+          ? `Execuções Planejadas - ${exerciciosOptions?.find(e => e.id === selectedExercicio)?.nome +'/'+ exerciciosOptions?.find(e => e.id === selectedExercicio)?.name || 'Exercício'}`
           : 'Execuções Planejadas (Todos exercícios)',
         data: plannedData,
         borderColor: 'rgb(53, 162, 235)',
@@ -138,7 +139,7 @@ const ProgressChart = () => {
           <option value="">Todos os exercícios</option>
           {exerciciosOptions?.map((exercicio) => (
             <option key={exercicio.id} value={exercicio.id}>
-              {exercicio.nome}
+              {exercicio.nome} / {exercicio.name}
             </option>
           ))}
         </select>
@@ -152,7 +153,7 @@ const ProgressChart = () => {
             title: {
               display: true,
               text: selectedExercicio
-                ? `Progresso - ${exerciciosOptions?.find(e => e.id === selectedExercicio)?.nome || 'Exercício'}`
+                ? `Progresso - ${exerciciosOptions?.find(e => e.id === selectedExercicio)?.nome +'/'+ exerciciosOptions?.find(e => e.id === selectedExercicio)?.name || 'Exercício'}`
                 : 'Progresso Geral',
             },
           },

@@ -4,7 +4,7 @@ import { Panel, PanelGroup, Avatar, Loader } from "rsuite"
 import { toast } from "react-toastify"
 import { useSearchParams, useRouter } from "next/navigation"
 import { LuAward,LuPencil } from "react-icons/lu"
-import { FaArchive, FaUndo } from 'react-icons/fa';
+import { FaArchive, FaCopy, FaUndo } from 'react-icons/fa';
 import { FaTrashAlt } from "react-icons/fa"
 import { useQuery } from "@tanstack/react-query"
 import CreateTreino from "./components/create-treino"
@@ -46,6 +46,28 @@ const Treinos = () => {
     return <p>Erro ao carregar dados</p>;
   }
 
+  const handleCopyTreino = async (treinoId: number) => {
+    try {
+      const response = await fetch(`/api/letsgo/copiar-treino`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ treinoId }),
+      });
+
+      if (response.ok) {
+        const novoTreino = await response.json();
+        // Atualize a lista de treinos ou faça outra ação necessária
+        await refetch();
+      } else {
+        throw new Error('Falha ao copiar treino');
+      }
+    } catch (error) {
+      console.error('Erro ao copiar treino:', error);
+      // Mostrar mensagem de erro para o usuário
+    }
+  };
   const handleDeleteTreino = (id: string) => {
     toast.promise(
       (async () => {
@@ -145,7 +167,7 @@ const Treinos = () => {
   {isEditDiarioModal && (
     <EditTreino onSuccess={handleSuccess}/>
   )}
-  {!isCreateDiarioModalOpen && isEditDiarioModal && (
+  {!isCreateDiarioModalOpen && !isEditDiarioModal && (
     <div className="flex gap-2 mb-4">
     <Button
       title="Mostrar ativos"
@@ -249,6 +271,13 @@ const Treinos = () => {
                         ) : (
                           <FaUndo className="w-5 h-5" /> // Ícone para reativar
                         )}
+                      </button>
+                      <button
+                        onClick={() => handleCopyTreino(treino.id)}
+                        className="text-purple-500 hover:text-purple-700 p-1 rounded-full hover:bg-purple-50 transition-colors"
+                        title="Copiar treino"
+                      >
+                        <FaCopy className="w-5 h-5" />
                       </button>
                     </div>
                   </div>
