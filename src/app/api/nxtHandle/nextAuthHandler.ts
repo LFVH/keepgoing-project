@@ -3,7 +3,7 @@ import prisma from "@/database/prisma"
 import CredentialsProvider from "next-auth/providers/credentials"
 import bcrypt from 'bcryptjs';
 import dayjs from "dayjs"
-import { Usuario } from "@prisma/client";
+import { logNow } from "@/utils/Logging";
 
 const AuthHandler :AuthOptions= {
   pages: {
@@ -37,8 +37,7 @@ const AuthHandler :AuthOptions= {
         if (!passwordMatch) {
           throw new Error("Senha incorreta.");
         }
-        
-        return { id: user.id, name: user.name, email: user.email }; // Retorna os dados do usuário autenticado
+        return { id: user.id, name: user.name, email: user.email , status: user.statusAss}; // Retorna os dados do usuário autenticado
       }
     }),
   ],
@@ -55,17 +54,27 @@ const AuthHandler :AuthOptions= {
         token.user = {
           id: user.id,
           email: user.email,
-          name: user.name
+          name: user.name || null,
+          status: user.status || null,
         };
       }
       return token;
     },
 
-    session({ session, token }) {
+  async session({ session, token }) {
+    if (token.user) {
+      // Mantém todos os dados originais da session e adiciona/atualiza os campos
+      session.user = {
+        ...session.user, // mantém os campos padrão (name, email, image)
+        ...token.user,   // adiciona os campos do token (id, status, etc)
+      };
       
-      session = token.user as any
-      return Promise.resolve(session)
-    },
+      // Se você quer o status também no nível superior da session
+      session.status = token.user.status;
+      session.id = token.user.id;
+    }
+    return session;
+  },
   },
 }
 

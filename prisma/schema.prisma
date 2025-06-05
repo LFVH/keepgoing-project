@@ -19,8 +19,13 @@ model Usuario {
   isBlocked    Boolean? @default(false)
   dtIniPremium DateTime?
   dtFimPremium DateTime?
+  stripeCliId  String?  @unique
+  stripeSubId  String?  @unique
+  statusAss    String   @default("inativo") // "ativo", "cancelado", "pendente"
+  plano        String?  // "mensal", "anual", "semestral"
   updatedAt    DateTime @updatedAt
   createdAt    DateTime @default(now())
+  @@index([stripeCliId])
 }
 
 model RefreshToken {

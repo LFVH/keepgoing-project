@@ -1,5 +1,4 @@
 import { NextRequest, NextResponse } from "next/server";
-import prisma from "@/database/prisma";
 import { verifyUser } from "@/utils/verifyUserAuth";
 
 export async function GET(

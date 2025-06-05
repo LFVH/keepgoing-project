@@ -52,7 +52,7 @@ export default function Header() {
                   <div className="h-8 w-8 rounded-full bg-gray-700 flex items-center justify-center">
                     {session.name?.charAt(0) || 'U'}
                   </div>
-                  <span className="text-sm">{session.name || 'Usuário'}</span>
+                  <span className="text-sm">{session.user.name || 'Usuário'}</span>
                 </Link>
                 <button
                   onClick={() => signOut({ callbackUrl: "/" })}

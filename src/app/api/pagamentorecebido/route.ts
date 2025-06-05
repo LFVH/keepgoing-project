@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "@/database/prisma";
-import { userExists, verifyUser } from "@/utils/verifyUserAuth";
+import { userExists } from "@/utils/verifyUserAuth";
 
 export async function PUT(req: NextRequest) {
   try {

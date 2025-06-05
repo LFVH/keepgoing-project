@@ -4,8 +4,7 @@ import { verifyUser } from '@/utils/verifyUserAuth';
 
 export async function POST(request: Request) {
   const userId = await verifyUser();
-  if (userId instanceof NextResponse) 
-  return userId; 
+  if (userId instanceof NextResponse) return userId; 
   try {
     const { treinoId } = await request.json();
 

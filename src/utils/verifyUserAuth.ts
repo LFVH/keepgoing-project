@@ -11,11 +11,9 @@ export async function verifyUser() {
     if(userDB instanceof NextResponse) return userDB;
   
     const userId = checkPremiumExpiration(userDB);
-  
     return userId; // Retorna o ID do usuário para ser usado nas rotas
   } catch (error) {
-    logNow("verifyUser");
-    console.log(error);
+    logNow("verifyUser " + (error instanceof Error ? error.message : 'Ocorreu um erro!'));
     return NextResponse.json(
       { success: false, body: { message: error instanceof Error ? error.message : 'Ocorreu um erro!' } },
       { status: 400 }
@@ -65,7 +63,7 @@ function checkPremiumExpiration(user: Usuario ) {
   dtFim.setHours(0, 0, 0, 0);
 
   // Check if current date is outside premium period
-  if (currentDate < dtIni || currentDate > dtFim) {
+  if (currentDate < dtIni || currentDate >= dtFim) {
       throw new Error("101 - 2");
   }
   return user.id;
